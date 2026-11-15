@@ -1,7 +1,7 @@
 // Optional MongoDB Atlas mirror of the call logs. The JSONL files stay the source of truth for
 // curation; this copy is fire-and-forget so a slow or down database never blocks or breaks a call.
 // Enabled only when MONGODB_URI is set. Collections: observations, sessions (latest summary per
-// call), consent.
+// call), consent, errors.
 
 async function defaultConnect(uri) {
   const { MongoClient } = await import('mongodb');
@@ -40,6 +40,9 @@ export function createMirror({
       await db.collection('sessions').replaceOne({ _id: rec.session_id }, { ...rec, _id: rec.session_id }, { upsert: true });
     } else if (kind === 'consent') {
       await db.collection('consent').insertOne({ ...rec });
+    } else if (kind === 'errors') {
+      // error_id as _id: a retried write can't create a duplicate.
+      await db.collection('errors').updateOne({ _id: rec.error_id }, { $setOnInsert: { ...rec, _id: rec.error_id } }, { upsert: true });
     } else {
       throw new Error(`unknown collection ${kind}`);
     }

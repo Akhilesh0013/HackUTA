@@ -16,6 +16,7 @@ export function paths(root = ROOT) {
     changelog: p('guide', 'CHANGELOG.md'),
     observations: p('data', 'raw', 'observations.jsonl'),
     sessions: p('data', 'raw', 'sessions.jsonl'),
+    errors: p('data', 'raw', 'errors.jsonl'),
     episodes: p('data', 'episodes'),
     curation: p('data', 'curation'),
     state: p('data', 'curation', 'state.json'),

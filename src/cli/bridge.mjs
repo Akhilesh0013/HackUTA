@@ -6,6 +6,7 @@
 import * as rtc from '@livekit/rtc-node';
 import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
 import { AGENT_IDENTITY, bridgeRoom } from '../bridge/livekit.mjs';
+import { captureProcessErrors, withErrorLog } from '../errors.mjs';
 
 const argv = process.argv.slice(2);
 const arg = (name) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? argv[i + 1] : undefined; };
@@ -16,8 +17,9 @@ if (missing.length) { console.error(`Missing in .env: ${missing.join(', ')}`); p
 if (!arg('room') && !argv.includes('--watch')) { console.error('Usage: npm run bridge -- --room <name> | --watch [--prefix <p>]'); process.exit(1); }
 
 // Only type/session/name/reason/error: never caller content.
-const log = ({ type, sessionId, name, room, reason, error, attempt, expected }) =>
-  console.log(JSON.stringify({ t: new Date().toISOString(), type, sessionId, room, name, reason, error, attempt, expected }));
+const log = withErrorLog('bridge', ({ type, sessionId, name, room, reason, error, attempt, expected }) =>
+  console.log(JSON.stringify({ t: new Date().toISOString(), type, sessionId, room, name, reason, error, attempt, expected })));
+captureProcessErrors('bridge');
 
 async function agentToken(room) {
   const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, { identity: AGENT_IDENTITY, name: 'Genesis', ttl: '2h' });

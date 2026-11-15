@@ -9,18 +9,21 @@ import { fileURLToPath } from 'node:url';
 import { ServerOptions, cli, defineAgent } from '@livekit/agents';
 import * as rtc from '@livekit/rtc-node';
 import { bridgeRoom } from '../bridge/livekit.mjs';
+import { captureProcessErrors, withErrorLog } from '../errors.mjs';
 
 export const AGENT_NAME = process.env.AGENT_NAME || 'genesis-facetime-guide';
 
 // Only type/session/name/reason/error: never caller content.
-const log = ({ type, sessionId, name, room, reason, error, attempt }) =>
-  console.log(JSON.stringify({ t: new Date().toISOString(), type, sessionId, room, name, reason, error, attempt }));
+const log = withErrorLog('chert-worker', ({ type, sessionId, name, room, reason, error, attempt }) =>
+  console.log(JSON.stringify({ t: new Date().toISOString(), type, sessionId, room, name, reason, error, attempt })));
+captureProcessErrors('chert-worker');
 
 export default defineAgent({
   entry: async (ctx) => {
     await ctx.connect(); // subscribe to the caller's audio and video
     // Wait for the caller before opening a model session: the room exists before any call.
-    const caller = await ctx.waitForParticipant();
+    let caller;
+    try { caller = await ctx.waitForParticipant(); } catch { return; } // waiting room closed with no call: not an error
     log({ type: 'caller_joined', name: caller.identity.startsWith('chert-bridge-') ? 'chert-bridge' : 'other', room: ctx.room.name });
     const { done } = await bridgeRoom({
       room: ctx.room,

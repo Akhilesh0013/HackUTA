@@ -19,7 +19,8 @@ You FaceTime Genesis and point your camera at a problem: a monitor with no signa
 | `src/curation/` | filter → aggregate → propose → gates → apply → publish / monitor / rollback |
 | `src/server.mjs`, `public/call.html` | Browser call: camera + hold-to-talk mic over WebSocket |
 | `src/dashboard/`, `public/dashboard.html` | Dashboard: calls with each step, mistake and fix; results per playbook version; learned vs blocked updates; rollbacks |
-| `src/mirror.mjs` | Optional MongoDB Atlas copy of call logs (`MONGODB_URI`) |
+| `src/mirror.mjs` | Optional MongoDB copy of call logs and errors (`MONGODB_URI`) |
+| `src/errors.mjs` | Error log: failures from the server, bridge and FaceTime worker go to `data/raw/errors.jsonl` and the MongoDB `errors` collection |
 | `deploy/`, `docs/DEPLOY.md` | Vultr + GoDaddy + Caddy HTTPS deploy: `DOMAIN=... bash deploy/setup.sh` |
 | `src/bridge/` | FaceTime bridge: LiveKit room ↔ Gemini Live, step cards rendered as a video track |
 | `src/sim.mjs` | Synthetic sessions, including attacks and noise, for demos and tests |

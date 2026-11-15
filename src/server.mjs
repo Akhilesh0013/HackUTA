@@ -18,6 +18,7 @@ import { WebSocketServer } from 'ws';
 import { startLiveSession } from './agent/live-session.mjs';
 import { paths as getPaths } from './config.mjs';
 import { getCall, guideInfo, latestCuration, listCalls, overview } from './dashboard/api.mjs';
+import { isErrorEvent, recordError } from './errors.mjs';
 import { hashCaller } from './tools/handlers.mjs';
 
 const PUBLIC_DIR = fileURLToPath(new URL('../public/', import.meta.url));
@@ -98,6 +99,7 @@ export function createCallServer({
   // Every call event goes to the log and to dashboard viewers. Only safe fields: tool args can hold caller details.
   const note = ({ type, sessionId, name, error, card }) => {
     log({ type, sessionId, name, error });
+    if (isErrorEvent({ type, error })) recordError('server', { type, sessionId, name, error }, { paths });
     bus.emit('event', { t: new Date().toISOString(), type, sessionId, ...(name ? { name } : {}), ...(error ? { error } : {}), ...(card ? { card } : {}) });
   };
   const server = http.createServer((req, res) => {
