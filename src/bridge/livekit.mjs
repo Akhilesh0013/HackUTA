@@ -13,6 +13,11 @@ const OUT_FRAME = OUT_RATE / 100; // 10 ms frames
 const IN_RATE = 16000;
 const VOICE_RMS = 500;            // above this, the caller counts as talking
 
+/** chert dev sets room metadata {"chert_bridge_ready":true,...} once FaceTime is connected. */
+export function bridgeReady(metadata) {
+  try { return JSON.parse(metadata || '{}')?.chert_bridge_ready === true; } catch { return false; }
+}
+
 /**
  * Bridge one LiveKit room (already connected) to one Gemini Live session.
  * @returns {{ done: Promise<string>, end: (reason: string) => Promise<void> }}  done resolves with the end reason
@@ -26,6 +31,9 @@ export async function bridgeRoom({
   frameIntervalMs = 1000,
   cardIntervalMs = 500,
   maxReconnects = 1,
+  // 'first_track': greet when caller media arrives (plain LiveKit rooms).
+  // 'bridge_ready': greet only on Chert's bridge_ready metadata; the Mac drops calls silent for 10 s after it.
+  greetOn = 'first_track',
   log = () => {},
 }) {
   const sessionId = `facetime-${roomName}-${Date.now()}`;
@@ -143,8 +151,17 @@ export async function bridgeRoom({
       log({ type: 'caller_audio', name });
       pumpAudio(track).catch((err) => log({ type: 'error', error: `audio in: ${err.message}` }));
     }
-    greetOnce();
+    if (greetOn === 'first_track') greetOnce();
   }
+
+  // Chert: greet once FaceTime is ready, never just because the caller joined.
+  const onMetadata = () => {
+    if (greetOn !== 'bridge_ready' || !bridgeReady(room.metadata)) return;
+    if (!live) return; // session still opening: checked again right after it opens
+    room.off?.('roomMetadataChanged', onMetadata);
+    log({ type: 'bridge_ready', sessionId });
+    greetOnce();
+  };
 
   // ---- lifecycle ----
   async function end(reason) {
@@ -152,6 +169,7 @@ export async function bridgeRoom({
     ended = true;
     timers.forEach(clearInterval);
     room.off?.('trackSubscribed', onTrack);
+    room.off?.('roomMetadataChanged', onMetadata);
     try { live?.close(); } catch {}
     await Promise.allSettled([voice.close(), cards.close(), room.disconnect()]);
     log({ type: 'call_end', sessionId, reason });
@@ -159,6 +177,7 @@ export async function bridgeRoom({
   }
 
   room.on('trackSubscribed', onTrack);
+  room.on('roomMetadataChanged', onMetadata);
   room.on('participantDisconnected', (p) => {
     if (p.identity === agentIdentity) return;
     const others = [...(room.remoteParticipants?.values?.() ?? [])].filter((x) => x.identity !== agentIdentity && x.identity !== p.identity);
@@ -176,6 +195,7 @@ export async function bridgeRoom({
     return { done, end };
   }
   log({ type: 'call_start', sessionId, room: roomName });
+  onMetadata(); // bridge_ready may already be set
 
   // Tracks that were subscribed before we attached the listener.
   for (const p of room.remoteParticipants?.values?.() ?? []) {

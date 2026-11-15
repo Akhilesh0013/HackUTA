@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import test from 'node:test';
 import sharp from 'sharp';
-import { bridgeRoom } from '../src/bridge/livekit.mjs';
+import { bridgeReady, bridgeRoom } from '../src/bridge/livekit.mjs';
 import { PcmChunker, cardSvg, cardToRgba, rgbaToJpeg, rms } from '../src/bridge/media.mjs';
 
 const tick = (ms = 20) => new Promise((r) => setTimeout(r, ms));
@@ -193,4 +193,23 @@ test('bridge: silence timeout and failed agent start both end the call', async (
   const b = fakeRtc();
   const r2 = await bridgeRoom({ room: fakeRoom(), rtc: b.rtc, roomName: 'call-4', startSession: async () => { throw new Error('no key'); }, cardIntervalMs: 10_000 });
   assert.match(await r2.done, /agent failed to start: no key/);
+});
+
+test('bridge (Chert mode): greets only on chert_bridge_ready, not when the caller joins', async () => {
+  const { rtc, streams } = fakeRtc();
+  const room = fakeRoom();
+  room.metadata = '';
+  const { sessions, start } = fakeSessions();
+  const { end } = await bridgeRoom({ room, rtc, roomName: 'chert-1', startSession: start, greetOn: 'bridge_ready', frameIntervalMs: 0, cardIntervalMs: 10_000 });
+  const bridge = { identity: 'chert-bridge-abc' };
+  room.remoteParticipants.set(bridge.identity, bridge);
+  room.emit('trackSubscribed', { kind: 1, name: 'audio' }, {}, bridge);
+  assert.deepEqual(sessions[0].texts, [], 'no greeting on join');
+  room.metadata = JSON.stringify({ chert_call: 'abc', chert_bridge_ready: true });
+  room.emit('roomMetadataChanged');
+  room.emit('roomMetadataChanged');
+  assert.deepEqual(sessions[0].texts, ['Hi, I just called.'], 'greets once on bridge_ready');
+  assert.equal(bridgeReady('not json'), false);
+  await end('test');
+  streams.audio.close();
 });
