@@ -12,3 +12,6 @@ guide/GUIDE.proposed.md
 
 # personal project notes
 memory.md
+
+# demo history built by npm run demo:seed
+demo-data/

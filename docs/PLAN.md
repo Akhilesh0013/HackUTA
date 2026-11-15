@@ -66,9 +66,13 @@ Already done: guide, tool handlers, curation pipeline (G1–G11), publish/rollba
 
 - [ ] **5.1 Real demo run.** Props: monitor + wrong cable, phone on a stand. Rehearse 5 times.
   Done when: 3 runs in a row finish in under 3 minutes with no failures.
+  Status: runbook ready in `docs/DEMO.md` (props, 10-minute setup, minute-by-minute script, fallback order, Q&A). `npm run demo:seed` + `npm run demo` give the dashboard its history without touching the repo's data. 🔑 Rehearsals need keys and props.
 - [ ] **5.2 New video.** Record the real call plus the dashboard (OBS), add a voiceover (iMovie), upload to YouTube as Unlisted.
   Done when: the Devpost "Video demo link" field has the URL.
+  Status: interim video `~/Desktop/Genesis-demo-v2.mp4` (85 s, real call page, step card and dashboard screens, no audio). 🔑 Record the real call, add a voiceover, upload Unlisted.
 - [ ] **5.3 Update Devpost.** Make "How we built it", "Built with" and the generative AI answer match what actually shipped.
   Done when: every claim on Devpost can be shown in the demo.
+  Status: text ready in `docs/DEVPOST.md`; lines that need a live call are marked **[only if live]**. Review before submitting.
 - [ ] **5.4 Backup.** Keep the current offline video and the browser call (Phase 1) as a fallback if FaceTime or Wi-Fi fails.
   Done when: the fallback is on the laptop and rehearsed once.
+  Status: fallback order in `docs/DEMO.md`: browser call, then dashboard story on stored data, then the offline video. 🔑 Rehearse once.

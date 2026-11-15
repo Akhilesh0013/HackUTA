@@ -32,6 +32,7 @@ npm test                                   # 33 tests: PII, handlers, every gate
 npm run live-smoke                         # scripted call against Gemini 3.8 Live (frame + tools + WAV)
 npm run ws-smoke                           # same, through the call server WebSocket
 npm run bridge -- --watch                  # FaceTime bridge: join each Chert/LiveKit call room as the agent
+npm run demo:seed && npm run demo          # dashboard with demo history (separate demo-data/ folder)
 npm run simulate -- --sessions 60          # fake calls through the real handlers
 npm run curate                             # needs 25 new sessions (or --force)
 npm run curate -- --allow-no-classifier    # offline run; reviewer must check safety manually
@@ -46,6 +47,12 @@ Put `GEMINI_API_KEY` in `.env` (scripts load it). The live agent uses `gemini-3.
 - ✅ Gemini 3.8 Live session tested end to end with a camera frame: diagnosis, manual lookup, consent, mistake + fix logging
 - 🔧 Browser call (`npm start`) and Chert/LiveKit FaceTime bridge (`npm run bridge`): built and tested with fakes; live runs need Gemini and LiveKit keys
 - ✅ Dashboard (`/dashboard.html`); set `DASHBOARD_TOKEN` before exposing it publicly
+
+## Docs
+- [docs/PLAN.md](docs/PLAN.md): build plan and status
+- [docs/DEMO.md](docs/DEMO.md): demo runbook
+- [docs/DEPLOY.md](docs/DEPLOY.md): deploy to Vultr + GoDaddy + Atlas
+- [docs/DEVPOST.md](docs/DEVPOST.md): submission text
 
 ## Earlier plan
 The team's original "Athena on Call" plan (cooking assistant, Next.js) is kept in [docs/athena-on-call-plan.md](docs/athena-on-call-plan.md).

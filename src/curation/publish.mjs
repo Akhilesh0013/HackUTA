@@ -117,7 +117,9 @@ export function monitor({ paths, dryRun = false, today = localDate() }) {
   const restored = { ...prevK, meta: { ...prevK.meta, version: v + 1, last_curated: today, rollback_of: v, from_batch: null } };
   saveKnowledge(paths.knowledge, restored);
   fs.writeFileSync(paths.guide, renderGuide(guideText, restored), 'utf8');
-  changelog(paths, `${today} · ROLLBACK v${v} → v${v + 1} (content of v${v - 1}) · resolution −${drops.resolution.toFixed(1)} pts, first-try −${drops.first_try.toFixed(1)} pts`);
+  // A drop is positive when the metric got worse; a metric that improved shows as +.
+  const change = (drop) => `${drop >= 0 ? '−' : '+'}${Math.abs(drop).toFixed(1)} pts`;
+  changelog(paths, `${today} · ROLLBACK v${v} → v${v + 1} (content of v${v - 1}) · resolution ${change(drops.resolution)}, first-try ${change(drops.first_try)}`);
   state.evaluated_versions[v] = 'rolled_back';
   state.batches = state.batches.map((b) => (b.batch === k.meta.from_batch ? { ...b, status: 'rolled_back' } : b));
   saveState(paths, state);
