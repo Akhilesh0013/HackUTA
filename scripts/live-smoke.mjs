@@ -1,6 +1,6 @@
 // Smoke test for the Gemini Live agent without FaceTime: scripted caller turns (typed),
 // one camera frame, and a WAV of the agent's voice.
-//   npm run live-smoke                      (uses MENTOR_ROOT if set, else the project)
+//   npm run live-smoke                      (uses GENESIS_ROOT or MENTOR_ROOT if set, else the project)
 //   GEMINI_LIVE_MODEL=... npm run live-smoke
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,7 +14,7 @@ const paths = getPaths();
 const frame = fs.readFileSync(fileURLToPath(new URL('../test/fixtures/monitor-wrong-port.jpg', import.meta.url)));
 const audio = [];
 let agentLine = '';
-const flush = () => { if (agentLine.trim()) console.log(`  🤖 Mentor: ${agentLine.trim()}`); agentLine = ''; };
+const flush = () => { if (agentLine.trim()) console.log(`  🤖 Genesis: ${agentLine.trim()}`); agentLine = ''; };
 
 const live = await startLiveSession({
   sessionId: `smoke-${Date.now()}`,

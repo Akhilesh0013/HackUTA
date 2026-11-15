@@ -1,8 +1,8 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const ROOT = process.env.MENTOR_ROOT
-  ? path.resolve(process.env.MENTOR_ROOT)
+export const ROOT = (process.env.GENESIS_ROOT || process.env.MENTOR_ROOT)
+  ? path.resolve(process.env.GENESIS_ROOT || process.env.MENTOR_ROOT)
   : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 export function paths(root = ROOT) {

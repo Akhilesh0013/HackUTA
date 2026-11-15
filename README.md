@@ -1,8 +1,10 @@
-# Mentor: a FaceTime tech guide that learns safely
+# Genesis: a FaceTime tech guide that learns safely
 
-HackUTA 2026 · Chert "Best Use of FaceTime" · theme: Homer's Odyssey (in the Odyssey, Athena disguises herself as Mentor to guide Telemachus).
+*Every fix is a beginning.*
 
-You FaceTime Mentor and point your camera at a problem: a monitor with no signal, a router, a PC build, a printer that won't join Wi-Fi. Mentor sees it, walks you through the fix one step at a time, and shows step cards on your screen. Every checked step is logged with consent. Those logs:
+HackUTA 2026 · Chert "Best Use of FaceTime" · theme: Homer's Odyssey (Odysseus never made it home alone: Athena, disguised as Mentor, guided him and Telemachus).
+
+You FaceTime Genesis and point your camera at a problem: a monitor with no signal, a router, a PC build, a printer that won't join Wi-Fi. Genesis sees it, walks you through the fix one step at a time, and shows step cards on your screen. Every checked step is logged with consent. Those logs:
 1. become a **training dataset**, with mistakes kept as labeled negative examples, and
 2. update the agent's own playbook, `guide/GUIDE.md`, through a gated curation pipeline that keeps unsafe, poisoned or private data out.
 

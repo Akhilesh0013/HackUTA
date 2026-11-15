@@ -5,7 +5,7 @@ import { paths as getPaths, ROOT } from '../src/config.mjs';
 
 /** Fresh sandbox with a copy of guide/ and data/manuals/. */
 export function sandbox() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mentor-test-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'genesis-test-'));
   fs.cpSync(path.join(ROOT, 'guide'), path.join(dir, 'guide'), {
     recursive: true,
     filter: (src) => !/versions|CHANGELOG|GUIDE\.proposed/.test(src),

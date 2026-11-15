@@ -26,7 +26,7 @@ export const SAFETY_BLOCKLIST = [
 // G8: prompt injection / format / promotion
 export const INJECTION_PATTERNS = [
   [/\b(ignore|disregard|forget|override)\b[^.]{0,30}\b(previous|above|prior|instructions?|rules?|part [a-e]|guide|system)\b/i, 'instruction override'],
-  [/\b(you (must|should|will) always|always (say|tell|answer|recommend)|never (mention|say|tell)|system prompt|as an ai|the (assistant|model|ai) (must|should|will)|mentor (must|should))\b/i, 'instructions to the model'],
+  [/\b(you (must|should|will) always|always (say|tell|answer|recommend)|never (mention|say|tell)|system prompt|as an ai|the (assistant|model|ai) (must|should|will)|mentor (must|should)|genesis (must|should))\b/i, 'instructions to the model'],
   [/(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|ai|co|shop|xyz|ly|gg)\b)/i, 'URL or domain'],
   [/[$€£]\s?\d|\b\d+(\.\d+)?\s?(usd|dollars|bucks)\b/i, 'price'],
   [/\b(buy|purchase|order one|sponsored|affiliate|best brand|discount|coupon|promo code|use brand)\b/i, 'promotion'],
