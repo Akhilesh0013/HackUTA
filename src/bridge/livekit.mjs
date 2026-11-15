@@ -10,6 +10,9 @@ import { CARD_H, CARD_W, PcmChunker, cardToRgba, pointerToRgba, rgbaToJpeg, rms 
 
 export const AGENT_IDENTITY = 'genesis';
 export const DEFAULT_CALLER_VIDEO_TRACK = 'facetime-remote-video';
+// Sent once per call as a text turn, so the Live model starts speaking. Worded as a cue, not as the
+// caller saying hi, so the model doesn't introduce itself again when the real caller says hello.
+export const GREET_NUDGE = '[The caller just connected. Give your one-time introduction now.]';
 const OUT_RATE = 24000;
 const OUT_FRAME = OUT_RATE / 100; // 10 ms frames
 const IN_RATE = 16000;
@@ -143,7 +146,7 @@ export async function bridgeRoom({
     try {
       await openSession();
       if (lastFrame) live.sendFrame(lastFrame);
-      live.sendText('The call dropped for a moment and reconnected. Continue helping from where we were.');
+      live.sendText('[The connection dropped for a moment and reconnected. Do not greet or introduce yourself again. Continue from where you were.]');
     } catch (err) {
       await end(`agent reconnect failed: ${err.message}`);
     }
@@ -153,7 +156,7 @@ export async function bridgeRoom({
     if (greeted || !live) return;
     greeted = true;
     // Live models wait for input: a short nudge makes Genesis greet first (GUIDE.md: within 10 s).
-    live.sendText('Hi, I just called.');
+    live.sendText(GREET_NUDGE);
   }
 
   // ---- caller media in ----

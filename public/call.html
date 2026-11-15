@@ -220,7 +220,7 @@ async function startCall() {
       enableControls(true);
       startFrames();
       // Live models wait for input: a short nudge makes Genesis greet first.
-      ws.send(JSON.stringify({ type: 'text', text: 'Hi, I just called.' }));
+      ws.send(JSON.stringify({ type: 'text', text: '[The caller just connected. Give your one-time introduction now.]' }));
     } else if (msg.type === 'transcript') {
       if (msg.role === 'agent') agentSaid(msg.text); else callerSaid(msg.text);
     } else if (msg.type === 'card') {

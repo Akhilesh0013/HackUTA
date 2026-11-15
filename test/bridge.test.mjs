@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import test from 'node:test';
 import sharp from 'sharp';
-import { bridgeReady, bridgeRoom } from '../src/bridge/livekit.mjs';
+import { GREET_NUDGE, bridgeReady, bridgeRoom } from '../src/bridge/livekit.mjs';
 import { PcmChunker, cardSvg, cardToRgba, rgbaToJpeg, rms } from '../src/bridge/media.mjs';
 
 const tick = (ms = 20) => new Promise((r) => setTimeout(r, ms));
@@ -130,7 +130,7 @@ test('bridge: caller media in, agent voice and cards out, hang up ends the call'
   room.emit('trackSubscribed', { kind: 2, name: 'facetime-remote-video' }, {}, caller);
   room.emit('trackSubscribed', { kind: 1, name: 'facetime-remote-audio' }, {}, caller);
   const s = sessions[0];
-  assert.deepEqual(s.texts, ['Hi, I just called.']); // greeted once, not per track
+  assert.deepEqual(s.texts, [GREET_NUDGE]); // greeted once, not per track
   assert.deepEqual(out.audioOpts, { sampleRate: 16000, numChannels: 1 });
   assert.notEqual(s.opts.callerId, caller.identity); // caller id is hashed
 
@@ -208,7 +208,7 @@ test('bridge (Chert mode): greets only on chert_bridge_ready, not when the calle
   room.metadata = JSON.stringify({ chert_call: 'abc', chert_bridge_ready: true });
   room.emit('roomMetadataChanged');
   room.emit('roomMetadataChanged');
-  assert.deepEqual(sessions[0].texts, ['Hi, I just called.'], 'greets once on bridge_ready');
+  assert.deepEqual(sessions[0].texts, [GREET_NUDGE], 'greets once on bridge_ready');
   assert.equal(bridgeReady('not json'), false);
   await end('test');
   streams.audio.close();
