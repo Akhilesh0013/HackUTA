@@ -113,6 +113,14 @@ const $ = (id) => document.getElementById(id);
 const token = new URLSearchParams(location.search).get('token');
 const withToken = (u) => (token ? `${u}${u.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}` : u);
 let selected = null;
+let locked = false;
+
+function showLocked() {
+  locked = true;
+  $('live').classList.remove('on');
+  $('live').lastElementChild.textContent = 'Locked';
+  $('calls').replaceChildren(el('p', { class: 'muted', text: 'This dashboard is locked. Open it with ?token=<DASHBOARD_TOKEN> at the end of the URL.' }));
+}
 
 /** Build DOM with textContent only: call logs are untrusted text. */
 function el(tag, attrs = {}, ...kids) {
@@ -133,7 +141,7 @@ const RESULT = { correct: 'ok', incorrect: 'bad', partial: 'warn' };
 
 async function api(path) {
   const r = await fetch(withToken(path));
-  if (r.status === 401) throw new Error('This dashboard needs ?token= in the URL.');
+  if (r.status === 401) { showLocked(); throw new Error('This dashboard needs ?token= in the URL.'); }
   if (!r.ok) throw new Error(`${path}: ${r.status}`);
   return r.json();
 }
@@ -224,7 +232,11 @@ const refreshSoon = () => { clearTimeout(refreshTimer); refreshTimer = setTimeou
 function connectStream() {
   const es = new EventSource(withToken('/api/stream'));
   es.onopen = () => { $('live').classList.add('on'); $('live').lastElementChild.textContent = 'Live'; };
-  es.onerror = () => { $('live').classList.remove('on'); $('live').lastElementChild.textContent = 'Reconnecting…'; };
+  es.onerror = () => {
+    if (locked) { es.close(); return; }
+    $('live').classList.remove('on');
+    $('live').lastElementChild.textContent = 'Reconnecting…';
+  };
   es.onmessage = (m) => {
     const e = JSON.parse(m.data);
     if (e.type === 'call_start') feed('Call started');
@@ -236,7 +248,7 @@ function connectStream() {
 }
 
 refreshAll();
-setInterval(refreshAll, 5000);
+setInterval(() => { if (!locked) refreshAll(); }, 5000);
 // ?call=<session id> opens that call (handy for demos and links).
 const linked = new URLSearchParams(location.search).get('call');
 if (linked) selectCall(linked).catch(showError);
