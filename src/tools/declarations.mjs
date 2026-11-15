@@ -92,6 +92,52 @@ export const TOOL_DECLARATIONS = [
       required: ['title', 'steps'],
     },
   },
+  {
+    name: 'point_at',
+    description: "Circle a thing on the caller's screen, on a snapshot of their camera view, instead of describing where it is. Takes about 2 seconds.",
+    parameters: {
+      type: 'object',
+      properties: {
+        target: str('Precisely what to find, as seen on camera, e.g. "the port labelled HDMI 1", "the cable plugged into the DP port"'),
+        label: str('1-3 words shown next to the circle, e.g. "HDMI 1"'),
+      },
+      required: ['target'],
+    },
+  },
+  {
+    name: 'unlock_schedule',
+    description: "Check the PIN the caller said before using their schedule. Only needed if a schedule tool says it's locked.",
+    parameters: {
+      type: 'object',
+      properties: { pin: str('The PIN exactly as the caller said it, digits only') },
+      required: ['pin'],
+    },
+  },
+  {
+    name: 'add_event',
+    description: "Save an event or reminder to the caller's personal schedule. Confirm the title, day and time with the caller first.",
+    parameters: {
+      type: 'object',
+      properties: {
+        title: str('Short title, e.g. "Dentist" or "Return the router"'),
+        start: str('Local start date and time as YYYY-MM-DDTHH:MM, resolved from the current date in the call context'),
+        end: str('Optional local end, YYYY-MM-DDTHH:MM'),
+        notes: str('Optional short notes'),
+      },
+      required: ['title', 'start'],
+    },
+  },
+  {
+    name: 'list_events',
+    description: "Read the caller's saved schedule. Without dates it returns upcoming events from today.",
+    parameters: {
+      type: 'object',
+      properties: {
+        from_date: str('Optional first day, YYYY-MM-DD'),
+        to_date: str('Optional last day, YYYY-MM-DD'),
+      },
+    },
+  },
 ];
 
 /** Gemini (Live or generateContent) `tools` value. */

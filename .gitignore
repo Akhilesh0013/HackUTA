@@ -5,6 +5,8 @@ node_modules/
 data/raw/
 data/curation/
 data/episodes/
+# personal schedule
+data/assistant/
 guide/GUIDE.proposed.md
 
 # example env file is safe to commit
@@ -15,3 +17,6 @@ memory.md
 
 # demo history built by npm run demo:seed
 demo-data/
+
+# local run logs (chert dev, agent worker)
+*.log

@@ -21,6 +21,7 @@ export function paths(root = ROOT) {
     state: p('data', 'curation', 'state.json'),
     rejectedLog: p('data', 'curation', 'rejected.log'),
     manuals: p('data', 'manuals'),
+    schedule: p('data', 'assistant', 'schedule.json'), // personal data: never committed, never curated
   };
 }
 
@@ -51,7 +52,7 @@ export const CATEGORIES = {
   D4: 'Device setup and configuration',
 };
 
-export const TASK_CATEGORIES = ['troubleshoot', 'install', 'configure', 'cabling', 'manual_lookup'];
+export const TASK_CATEGORIES = ['troubleshoot', 'install', 'configure', 'cabling', 'manual_lookup', 'general'];
 export const RESULTS = ['correct', 'incorrect', 'partial', 'unverifiable'];
 export const OUTCOMES = ['resolved', 'partially_resolved', 'unresolved', 'referred_to_pro', 'abandoned'];
 export const OUTCOME_EVIDENCE = ['seen', 'caller_confirmed', 'none'];

@@ -23,13 +23,13 @@ test('rgbaToJpeg downscales caller video to a 512 px JPEG', async () => {
   assert.equal(meta.height, 288);
 });
 
-test('cards render to 1280x720 RGBA and escape untrusted text', async () => {
+test('cards render to 1080x1920 portrait RGBA and escape untrusted text', async () => {
   const px = await cardToRgba({ title: 'Fix <script>', steps: ['Use HDMI 1 & check "input"', 'Power on'] });
-  assert.equal(px.length, 1280 * 720 * 4);
+  assert.equal(px.length, 1080 * 1920 * 4);
   const svg = cardSvg({ title: '<b>x</b>', steps: ['a & b'] });
   assert.ok(!svg.includes('<b>'));
   assert.ok(svg.includes('&lt;b&gt;') && svg.includes('a &amp; b'));
-  assert.equal((await cardToRgba(null)).length, 1280 * 720 * 4); // idle screen
+  assert.equal((await cardToRgba(null)).length, 1080 * 1920 * 4); // idle screen
 });
 
 test('PcmChunker emits fixed frames and carries the remainder', () => {
@@ -153,7 +153,7 @@ test('bridge: caller media in, agent voice and cards out, hang up ends the call'
   // A card is rendered and pushed to the video track.
   s.opts.onCard({ title: 'Fix', steps: ['Use HDMI 1'] });
   await until(() => out.cardFrames.length === 2);
-  assert.equal(out.cardFrames[1].data.length, 1280 * 720 * 4);
+  assert.equal(out.cardFrames[1].data.length, 1080 * 1920 * 4);
 
   room.remoteParticipants.delete(caller.identity);
   room.emit('participantDisconnected', caller);

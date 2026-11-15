@@ -9,6 +9,7 @@ import { appendJsonl } from '../jsonl.mjs';
 import { defaultMirror } from '../mirror.mjs';
 import { redactObject } from '../pii.mjs';
 import { searchManuals } from '../manuals.mjs';
+import { createSchedule } from '../assistant/schedule.mjs';
 
 /** Hash a caller's phone/Apple ID so callers can be counted but never identified. */
 export function hashCaller(rawId, salt = process.env.CALLER_SALT || 'dev-salt-change-me') {
@@ -27,11 +28,27 @@ export function createToolHandlers({
   onCard = () => {},
   now = () => new Date().toISOString(),
   mirror = defaultMirror, // optional MongoDB copy; JSONL stays the source of truth
+  pointAt = null,          // async ({ target, label }) => result; set by transports that can show images
+  schedule = createSchedule(paths.schedule),
+  schedulePin = process.env.SCHEDULE_PIN || '',
 }) {
   if (!sessionId || !callerId || guideVersion == null) throw new Error('sessionId, callerId, guideVersion required');
   let consent = null; // null = not asked yet
   const write = (kind, file, record) => { appendJsonl(file, record); mirror.record(kind, record); };
   let sessionLogged = false;
+
+  // Schedule access: open when no PIN is configured, else unlocked per call by unlock_schedule.
+  let scheduleUnlocked = !schedulePin;
+  let pinFailures = 0;
+  const scheduleLocked = () => (scheduleUnlocked ? null : {
+    ok: false,
+    locked: true,
+    error: pinFailures >= 3 ? 'Schedule locked for this call after 3 wrong PINs.' : 'Schedule is locked. Ask the caller for their schedule PIN, then call unlock_schedule.',
+  });
+  const pinMatches = (pin) => {
+    const a = Buffer.from(String(pin ?? '').replace(/\D/g, '')), b = Buffer.from(schedulePin);
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+  };
 
   const ctx = () => ({ session_id: sessionId, caller_id: callerId, guide_version: guideVersion, ts: now() });
   const needConsent = () =>
@@ -145,6 +162,30 @@ export function createToolHandlers({
       };
       onCard(card);
       return { ok: true, shown: card };
+    },
+
+    async point_at({ target, label } = {}) {
+      if (typeof target !== 'string' || !target.trim()) return { ok: false, error: 'target required' };
+      if (!pointAt) return { ok: false, error: 'Pointing is not available on this call. Describe the location in words.' };
+      return pointAt({ target: cut(target.trim(), 120), label: cut(String(label || '').trim(), 24) });
+    },
+
+    // Personal schedule: separate from training logs, so it needs no logging consent.
+    unlock_schedule({ pin } = {}) {
+      if (!schedulePin) return { ok: true, unlocked: true, note: 'No PIN is set for this schedule.' };
+      if (scheduleUnlocked) return { ok: true, unlocked: true };
+      if (pinFailures >= 3) return scheduleLocked();
+      if (pinMatches(pin)) { scheduleUnlocked = true; return { ok: true, unlocked: true }; }
+      pinFailures++;
+      return { ok: false, unlocked: false, error: `Wrong PIN (${3 - pinFailures} tries left this call).` };
+    },
+
+    add_event(args = {}) {
+      return scheduleLocked() || schedule.add(args);
+    },
+
+    list_events(args = {}) {
+      return scheduleLocked() || schedule.list({ from_date: args.from_date, to_date: args.to_date });
     },
   };
 

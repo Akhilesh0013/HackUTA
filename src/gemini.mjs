@@ -15,6 +15,8 @@ const uniq = (a) => a.filter((m, i) => m && a.indexOf(m) === i);
 export const MODEL_CHAINS = {
   fast: uniq([process.env.GEMINI_MODEL, 'gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash']),
   strong: uniq([process.env.GEMINI_SAFETY_MODEL, 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash']),
+  // vision: finding things in a camera frame during a live call (point_at). Fast, no lite model.
+  vision: uniq([process.env.GEMINI_VISION_MODEL, 'gemini-3.5-flash', 'gemini-2.5-flash']),
 };
 /** @deprecated kept for the CLI banner */
 export const CURATION_MODELS = MODEL_CHAINS.fast;
@@ -33,23 +35,29 @@ export async function getGemini({ log = console.log } = {}) {
     return null;
   }
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const preferred = { fast: 0, strong: 0 }; // last model that worked per chain (sticky)
+  const preferred = { fast: 0, strong: 0, vision: 0 }; // last model that worked per chain (sticky)
 
   const client = {
     get model() { return MODEL_CHAINS.fast[preferred.fast]; },
     modelFor(tier = 'fast') { return MODEL_CHAINS[tier][preferred[tier]]; },
-    /** Ask for JSON and parse it. Retries + model fallback; throws if every model fails. */
-    async json(prompt, { temperature = 0, tier = 'fast' } = {}) {
+    /**
+     * Ask for JSON and parse it. Retries + model fallback; throws if every model fails.
+     * `prompt` is a string or a list of parts (e.g. an inline image and text).
+     */
+    async json(prompt, { temperature = 0, tier = 'fast', timeoutMs = TIMEOUT_MS, attempts = 2, thinking = true } = {}) {
       const chain = MODEL_CHAINS[tier] || MODEL_CHAINS.fast;
       const errors = [];
       for (let i = preferred[tier]; i < chain.length; i++) {
         const model = chain[i];
-        for (let attempt = 0; attempt < 2; attempt++) {
+        for (let attempt = 0; attempt < attempts; attempt++) {
           try {
             const res = await ai.models.generateContent({
               model,
               contents: prompt,
-              config: { responseMimeType: 'application/json', temperature, httpOptions: { timeout: TIMEOUT_MS } },
+              config: {
+                responseMimeType: 'application/json', temperature, httpOptions: { timeout: timeoutMs },
+                ...(thinking ? {} : { thinkingConfig: { thinkingBudget: 0 } }), // latency-critical calls
+              },
             });
             const text = typeof res.text === 'function' ? res.text() : res.text;
             const parsed = JSON.parse(text);
@@ -60,7 +68,7 @@ export async function getGemini({ log = console.log } = {}) {
             const msg = String(err?.message || err).slice(0, 160);
             errors.push(`${model}: ${msg}`);
             if (!RETRYABLE.test(msg)) break; // bad JSON / 4xx: next model, no retry
-            if (attempt === 0) await sleep(1500);
+            if (attempt < attempts - 1) await sleep(1500);
           }
         }
       }

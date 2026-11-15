@@ -8,6 +8,7 @@ import { LIVE_MODEL } from '../gemini.mjs';
 import { loadKnowledge } from '../knowledge.mjs';
 import { TOOL_DECLARATIONS } from '../tools/declarations.mjs';
 import { createToolHandlers } from '../tools/handlers.mjs';
+import { localNow } from '../assistant/schedule.mjs';
 
 export const LIVE_INPUT_AUDIO = 'audio/pcm;rate=16000'; // 16-bit mono PCM in
 export const LIVE_OUTPUT_AUDIO_RATE = 24000;             // 16-bit mono PCM out
@@ -24,16 +25,24 @@ function liveTools() {
  * @param {(t: {role:'agent'|'caller', text:string}) => void} [o.onTranscript]
  * @param {(card: object) => void} [o.onCard]       render into the agent's video track
  * @param {(e: object) => void} [o.onEvent]          tool calls/results, turn boundaries, errors
+ * @param {(a: {target:string,label:string}) => Promise<object>} [o.pointAt]  circle a thing on screen (point_at)
  */
 export async function startLiveSession({
   sessionId, callerId, paths = getPaths(), model = LIVE_MODEL, voice = process.env.GEMINI_LIVE_VOICE,
-  onAudio = () => {}, onTranscript = () => {}, onCard = () => {}, onEvent = () => {},
+  onAudio = () => {}, onTranscript = () => {}, onCard = () => {}, onEvent = () => {}, pointAt = null,
 }) {
   const { GoogleGenAI, Modality } = await import('@google/genai');
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const knowledge = loadKnowledge(paths.knowledge);
   const guide = fs.readFileSync(paths.guide, 'utf8');
-  const tools = createToolHandlers({ sessionId, callerId, guideVersion: knowledge.meta.version, paths, onCard });
+  const tools = createToolHandlers({ sessionId, callerId, guideVersion: knowledge.meta.version, paths, onCard, pointAt });
+  // The model has no clock: give it today's date so "Tuesday at 3" resolves to a real date.
+  const now = localNow();
+  const callContext = [
+    '', '', '---', '', '## Call context',
+    `Now: ${now.text} (time zone ${now.tz}). Today is ${now.date}.`,
+    ...(pointAt ? [] : ['Pointing (point_at) is not available on this call: describe locations in words.']),
+  ].join('\n');
 
   let session;
   let closed = false;
@@ -74,7 +83,7 @@ export async function startLiveSession({
     model,
     config: {
       responseModalities: [Modality.AUDIO],
-      systemInstruction: guide,
+      systemInstruction: guide + callContext,
       tools: liveTools(),
       inputAudioTranscription: {},
       outputAudioTranscription: {},

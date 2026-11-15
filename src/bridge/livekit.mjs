@@ -4,14 +4,27 @@
 // `rtc` and `startSession` are injectable so tests can run without LiveKit or Gemini.
 import { startLiveSession } from '../agent/live-session.mjs';
 import { hashCaller } from '../tools/handlers.mjs';
-import { CARD_H, CARD_W, PcmChunker, cardToRgba, rgbaToJpeg, rms } from './media.mjs';
+import { locate } from '../agent/pointer.mjs';
+import { getGemini } from '../gemini.mjs';
+import { CARD_H, CARD_W, PcmChunker, cardToRgba, pointerToRgba, rgbaToJpeg, rms } from './media.mjs';
 
 export const AGENT_IDENTITY = 'genesis';
 export const DEFAULT_CALLER_VIDEO_TRACK = 'facetime-remote-video';
 const OUT_RATE = 24000;
 const OUT_FRAME = OUT_RATE / 100; // 10 ms frames
 const IN_RATE = 16000;
-const VOICE_RMS = 500;            // above this, the caller counts as talking
+const VOICE_RMS = 500;
+const CARD_MAX_BITRATE = 4_000_000;
+const POINT_FRAME_WIDTH = 1280; // sharper copy of the caller frame, for finding and circling things
+
+let geminiClient;
+/** Default point_at finder: a Gemini vision model on the caller's latest frame. */
+async function defaultLocate(jpeg, target) {
+  geminiClient ??= getGemini({ log: () => {} });
+  const gemini = await geminiClient;
+  if (!gemini) throw new Error('GEMINI_API_KEY not set');
+  return locate(gemini, jpeg, target);
+}            // above this, the caller counts as talking
 
 /** chert dev sets room metadata {"chert_bridge_ready":true,...} once FaceTime is connected. */
 export function bridgeReady(metadata) {
@@ -29,7 +42,9 @@ export async function bridgeRoom({
   agentIdentity = AGENT_IDENTITY,
   silenceMs = 60_000,
   frameIntervalMs = 1000,
-  cardIntervalMs = 500,
+  pointHoldMs = 12_000, // how long a circled snapshot stays up before the step card returns
+  locateThing = defaultLocate,
+  cardIntervalMs = 200, // 5 fps: a static card still needs steady frames or the encoder stays blurry
   maxReconnects = 1,
   // 'first_track': greet when caller media arrives (plain LiveKit rooms).
   // 'bridge_ready': greet only on Chert's bridge_ready metadata; the Mac drops calls silent for 10 s after it.
@@ -42,6 +57,7 @@ export async function bridgeRoom({
   let ended = false;
   let reconnects = 0;
   let lastFrame = null;
+  let lastFrameHi = null;
   let lastCallerActivity = Date.now();
   let greeted = false;
   let resolveDone;
@@ -63,9 +79,40 @@ export async function bridgeRoom({
   // ---- step cards out (re-sent on a timer so late subscribers and encoders always have a frame) ----
   const cards = new rtc.VideoSource(CARD_W, CARD_H);
   const cardTrack = rtc.LocalVideoTrack.createVideoTrack('genesis-cards', cards);
-  await room.localParticipant.publishTrack(cardTrack, new rtc.TrackPublishOptions({ source: rtc.TrackSource.SOURCE_CAMERA }));
+  // One full-quality layer (no simulcast, which would let the receiver pick a low-res layer) and a
+  // bitrate high enough for sharp text. Static frames compress well, so real usage stays far below it.
+  await room.localParticipant.publishTrack(cardTrack, new rtc.TrackPublishOptions({
+    source: rtc.TrackSource.SOURCE_CAMERA,
+    simulcast: false,
+    videoEncoding: { maxBitrate: BigInt(CARD_MAX_BITRATE), maxFramerate: 1000 / cardIntervalMs },
+  }));
   let cardPixels = await cardToRgba(null);
+  let cardBase = cardPixels; // the current step card; a pointer snapshot covers it for a while
+  let restoreTimer = null;
   const pushCard = () => { if (!ended) cards.captureFrame(new rtc.VideoFrame(cardPixels, CARD_W, CARD_H, rtc.VideoBufferType.RGBA)); };
+  const showCard = (px) => { clearTimeout(restoreTimer); cardBase = cardPixels = px; pushCard(); };
+
+  // point_at: find the thing in the latest frame and circle it on a snapshot of that frame.
+  async function pointAt({ target, label }) {
+    const frame = lastFrameHi;
+    if (!frame) return { ok: false, error: 'No camera picture yet. Ask the caller to point the camera at it.' };
+    let found;
+    try {
+      found = await locateThing(frame, target);
+    } catch (err) {
+      log({ type: 'error', error: `point_at: ${err.message}` });
+      return { ok: false, error: 'Pointing failed just now. Describe the location in words.' };
+    }
+    if (!found?.found) return { ok: false, found: false, error: `Could not see "${target}" clearly. Ask the caller to move closer or adjust the view, then try again.` };
+    const px = await pointerToRgba(frame, found.box, label || found.label);
+    if (ended) return { ok: false, error: 'call ended' };
+    clearTimeout(restoreTimer);
+    cardPixels = px;
+    pushCard();
+    restoreTimer = setTimeout(() => { cardPixels = cardBase; pushCard(); }, pointHoldMs);
+    timers.push(restoreTimer);
+    return { ok: true, found: true, shown: `Circled on the caller's screen for ${Math.round(pointHoldMs / 1000)} s, on a snapshot of their camera.` };
+  }
   pushCard();
   timers.push(setInterval(pushCard, cardIntervalMs));
 
@@ -75,9 +122,10 @@ export async function bridgeRoom({
       sessionId,
       callerId: hashCaller(callerIdentity || roomName),
       onAudio: speak,
+      pointAt,
       onTranscript: (t) => { if (t.role === 'caller') lastCallerActivity = Date.now(); },
       onCard: (card) => {
-        cardToRgba(card).then((px) => { cardPixels = px; pushCard(); }).catch((err) => log({ type: 'error', error: `card: ${err.message}` }));
+        cardToRgba(card).then(showCard).catch((err) => log({ type: 'error', error: `card: ${err.message}` }));
       },
       onEvent: (e) => {
         // Only type/name/error: tool args can hold caller details.
@@ -119,8 +167,10 @@ export async function bridgeRoom({
       busy = true;
       last = now;
       try {
-        lastFrame = await rgbaToJpeg(frame.convert(rtc.VideoBufferType.RGBA));
+        const rgba = frame.convert(rtc.VideoBufferType.RGBA);
+        lastFrame = await rgbaToJpeg(rgba);
         live?.sendFrame(lastFrame);
+        lastFrameHi = await rgbaToJpeg(rgba, POINT_FRAME_WIDTH);
       } catch (err) {
         log({ type: 'error', error: `frame: ${err.message}` });
       } finally {
@@ -168,6 +218,7 @@ export async function bridgeRoom({
     if (ended) return;
     ended = true;
     timers.forEach(clearInterval);
+    clearTimeout(restoreTimer);
     room.off?.('trackSubscribed', onTrack);
     room.off?.('roomMetadataChanged', onMetadata);
     try { live?.close(); } catch {}
