@@ -46,14 +46,16 @@ Already done: guide, tool handlers, curation pipeline (G1–G11), publish/rollba
 
 ## Phase 3: Dashboard
 
-- [ ] **3.1 Calls view.** `public/dashboard.html`, served by `src/server.mjs`: recent calls with steps, mistakes, fixes and cards.
+- [x] **3.1 Calls view.** `public/dashboard.html`, served by `src/server.mjs`: recent calls with steps, mistakes, fixes and cards.
   Done when: a finished call appears with its steps.
-- [ ] **3.2 Playbook view.** Current `GUIDE.md` version, the latest curation report (accepted vs rejected, with gate reasons), version history and rollbacks.
+  Status: done. `src/dashboard/api.mjs` + `GET /api/overview`, `/api/calls`, `/api/calls/:id`, live events on `/api/stream` (SSE). Page polls every 5 s so FaceTime calls (bridge process) show up too. `?call=<id>` opens a call. Optional `DASHBOARD_TOKEN`. Checked with headless Chrome on simulated data.
+- [x] **3.2 Playbook view.** Current `GUIDE.md` version, the latest curation report (accepted vs rejected, with gate reasons), version history and rollbacks.
   Done when: running `simulate`, `curate`, `publish-guide` and `monitor` changes what the dashboard shows.
+  Status: done. `/api/guide` and `/api/curation`: results per playbook version, publish/rollback history, learned vs blocked (with gate reasons), Part D entries. `test/dashboard.test.mjs` runs the full learn, publish, rollback cycle against it.
 
 ## Phase 4: Optional sponsor add-ons (only if Phases 1–3 are done)
 
-- [ ] **4.1 Deploy.** Run `src/server.mjs` on Vultr behind HTTPS (the camera needs HTTPS), on a GoDaddy domain.
+- [ ] **4.1 Deploy.** Set `DASHBOARD_TOKEN`: the dashboard shows call logs to anyone who can reach it. Run `src/server.mjs` on Vultr behind HTTPS (the camera needs HTTPS), on a GoDaddy domain.
   Done when: `/call` works from a phone browser at the domain.
 - [ ] **4.2 MongoDB.** Mirror observations and call records to MongoDB Atlas. Keep the JSONL files as the source for curation.
   Done when: a call appears in Atlas.

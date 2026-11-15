@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Genesis Dashboard</title>
+<style>
+  :root { --bg:#0d1117; --panel:#161b22; --line:#30363d; --fg:#e6edf3; --dim:#8b949e; --acc:#d4a72c; --ok:#3fb950; --bad:#f85149; --warn:#d29922; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 -apple-system, system-ui, sans-serif; }
+  header { display:flex; align-items:center; gap:14px; padding:14px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  header h1 { margin:0; font-size:22px; color:var(--acc); }
+  header a { color:var(--dim); font-size:14px; }
+  #live { display:flex; align-items:center; gap:6px; color:var(--dim); font-size:13px; margin-left:auto; }
+  #live i { width:9px; height:9px; border-radius:50%; background:var(--line); display:inline-block; }
+  #live.on i { background:var(--ok); }
+  main { max-width:1400px; margin:0 auto; padding:16px; display:grid; grid-template-columns:minmax(0,1fr); gap:16px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
+  .tile { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .tile b { display:block; font-size:28px; font-variant-numeric:tabular-nums; }
+  .tile span { color:var(--dim); font-size:13px; }
+  .grid2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.6fr); gap:16px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns:minmax(0,1fr); } }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; min-width:0; }
+  h2 { margin:0 0 10px; font-size:14px; color:var(--dim); font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+  .scroll { max-height:460px; overflow:auto; }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--dim); font-weight:600; }
+  td.id { white-space:nowrap; }
+  .calls button { all:unset; display:block; width:100%; padding:8px 10px; border-radius:8px; cursor:pointer; border-bottom:1px solid var(--line); }
+  .calls button:hover, .calls button[aria-current="true"] { background:#1f2630; }
+  .calls button:focus-visible { outline:2px solid var(--acc); }
+  .calls .goal { display:block; }
+  .calls .sub { color:var(--dim); font-size:12px; }
+  .badge { display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; background:var(--line); color:var(--fg); }
+  .ok { background:rgba(63,185,80,.18); color:var(--ok); }
+  .bad { background:rgba(248,81,73,.18); color:var(--bad); }
+  .warn { background:rgba(210,153,34,.18); color:var(--warn); }
+  .step { border-left:3px solid var(--line); padding:6px 0 10px 12px; margin-left:4px; }
+  .step.incorrect { border-color:var(--bad); }
+  .step.correct { border-color:var(--ok); }
+  .step .t { color:var(--dim); font-size:12px; }
+  .step p { margin:3px 0; }
+  .step .fix { color:var(--ok); }
+  .muted { color:var(--dim); }
+  ul.plain { list-style:none; margin:0; padding:0; }
+  ul.plain li { padding:6px 0; border-bottom:1px solid var(--line); }
+  #feed li { font-size:13px; }
+  #card h3 { margin:0 0 6px; }
+  #card ol { margin:0; padding-left:20px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Genesis Dashboard</h1>
+  <a href="/call.html">Open a browser call</a>
+  <span id="live" aria-live="polite"><i></i><span>Connecting…</span></span>
+</header>
+
+<main>
+  <section class="tiles" aria-label="Headline metrics">
+    <div class="tile"><b id="m-version">–</b><span>Playbook version</span></div>
+    <div class="tile"><b id="m-calls">–</b><span>Calls</span></div>
+    <div class="tile"><b id="m-res">–</b><span>Resolved</span></div>
+    <div class="tile"><b id="m-first">–</b><span>Steps right first try</span></div>
+    <div class="tile"><b id="m-dur">–</b><span>Median call</span></div>
+    <div class="tile"><b id="m-safety">–</b><span>Safety stops</span></div>
+  </section>
+
+  <section class="grid2">
+    <div class="panel">
+      <h2>Calls</h2>
+      <div class="scroll calls" id="calls"><p class="muted">No calls yet.</p></div>
+    </div>
+    <div class="panel">
+      <h2 id="detail-title">Call</h2>
+      <div class="scroll" id="detail"><p class="muted">Pick a call to see each step, mistake and fix.</p></div>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="panel">
+      <h2>Live</h2>
+      <div id="card"><p class="muted">The current step card appears here during a call.</p></div>
+      <ul class="plain" id="feed"></ul>
+    </div>
+    <div class="panel">
+      <h2>Results by playbook version</h2>
+      <div class="table-wrap"><table><thead><tr><th>Version</th><th>Calls</th><th>Resolved</th><th>First try</th><th>Median</th></tr></thead><tbody id="by-version"></tbody></table></div>
+      <h2 style="margin-top:16px">Top mistakes</h2>
+      <div id="errors" class="muted">–</div>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="panel">
+      <h2>Playbook history</h2>
+      <ul class="plain" id="history"><li class="muted">No updates yet.</li></ul>
+      <h2 style="margin-top:16px" id="cur-title">Latest curation</h2>
+      <div id="curation" class="muted">No curation batch yet.</div>
+    </div>
+    <div class="panel">
+      <h2>What Genesis has learned (Part D)</h2>
+      <div class="scroll"><table><thead><tr><th>ID</th><th>Entry</th><th>Status</th><th>Evidence</th></tr></thead><tbody id="entries"></tbody></table></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const token = new URLSearchParams(location.search).get('token');
+const withToken = (u) => (token ? `${u}${u.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}` : u);
+let selected = null;
+
+/** Build DOM with textContent only: call logs are untrusted text. */
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v; else if (k.startsWith('on')) n[k] = v; else n.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) if (k != null) n.append(k instanceof Node ? k : document.createTextNode(String(k)));
+  return n;
+}
+const pct = (v) => (v == null ? '–' : `${v}%`);
+const secs = (s) => (s == null ? '–' : s >= 60 ? `${Math.floor(s / 60)}m ${Math.round(s % 60)}s` : `${Math.round(s)}s`);
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const words = (s) => String(s ?? '').replace(/_/g, ' ');
+const when = (ts) => (ts ? new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '');
+const OUTCOME = { resolved: 'ok', partially_resolved: 'warn', unresolved: 'bad', referred_to_pro: 'warn', abandoned: 'bad' };
+const RESULT = { correct: 'ok', incorrect: 'bad', partial: 'warn' };
+
+async function api(path) {
+  const r = await fetch(withToken(path));
+  if (r.status === 401) throw new Error('This dashboard needs ?token= in the URL.');
+  if (!r.ok) throw new Error(`${path}: ${r.status}`);
+  return r.json();
+}
+
+async function loadOverview() {
+  const o = await api('/api/overview');
+  $('m-version').textContent = `v${o.guide_version}`;
+  $('m-calls').textContent = o.metrics.sessions;
+  $('m-res').textContent = pct(o.metrics.resolution_rate_pct);
+  $('m-first').textContent = pct(o.metrics.first_try_step_success_pct);
+  $('m-dur').textContent = secs(o.metrics.median_duration_s);
+  $('m-safety').textContent = pct(o.metrics.safety_stop_pct);
+  $('by-version').replaceChildren(...(o.by_version.length ? o.by_version.map((v) => el('tr', {},
+    el('td', { text: `v${v.version}` }), el('td', { text: v.sessions }), el('td', { text: pct(v.resolution_rate_pct) }),
+    el('td', { text: pct(v.first_try_step_success_pct) }), el('td', { text: secs(v.median_duration_s) }))) : [el('tr', {}, el('td', { colspan: 5, class: 'muted', text: 'No calls yet.' }))]));
+  $('errors').replaceChildren(...(o.top_errors.length ? o.top_errors.map((e) => el('span', { class: 'badge bad', style: 'margin:0 6px 6px 0' }, `${words(e.type)} ${e.pct}%`)) : ['–']));
+}
+
+async function loadCalls() {
+  const calls = await api('/api/calls?limit=100');
+  if (!calls.length) { $('calls').replaceChildren(el('p', { class: 'muted', text: 'No calls yet.' })); return; }
+  $('calls').replaceChildren(...calls.map((c) => {
+    const outcome = c.status === 'in_progress' ? el('span', { class: 'badge warn', text: 'in progress' }) : el('span', { class: `badge ${OUTCOME[c.outcome] || ''}`, text: words(c.outcome) });
+    return el('button', { 'aria-current': String(c.session_id === selected), onclick: () => selectCall(c.session_id) },
+      el('span', { class: 'goal' }, c.goal || words(c.task_category) || 'Call', ' ', outcome),
+      el('span', { class: 'sub', text: `${when(c.ts)} · v${c.guide_version ?? '?'} · ${plural(c.observations, 'step')} logged${c.errors_total ? ` · ${plural(c.errors_total, 'mistake')}` : ''}` }));
+  }));
+}
+
+async function selectCall(id) {
+  selected = id;
+  loadCalls().catch(showError);
+  const { session, steps } = await api(`/api/calls/${encodeURIComponent(id)}`);
+  $('detail-title').textContent = session?.goal || 'Call';
+  const head = session
+    ? el('p', { class: 'muted' }, `${words(session.outcome)} · ${secs(session.duration_s)} · playbook v${session.guide_version} · ${plural(session.steps_total, 'step')}, ${plural(session.errors_total, 'mistake')}${session.manual_used ? ` · manual: ${session.manual_used}` : ''}${session.safety_stop ? ' · safety stop' : ''}`)
+    : el('p', { class: 'muted', text: 'Call in progress.' });
+  const items = steps.map((s) => el('div', { class: `step ${s.result}` },
+    el('span', { class: 't' }, `${secs((s.t_video_ms ?? 0) / 1000)} · ${words(s.step_id)}${s.device?.type ? ` · ${words(s.device.type)}` : ''} `, el('span', { class: `badge ${RESULT[s.result] || ''}`, text: words(s.result) }),
+      s.error_type ? el('span', { class: 'badge bad', style: 'margin-left:6px', text: words(s.error_type) }) : null,
+      s.guide_entry_used ? el('span', { class: 'badge', style: 'margin-left:6px', text: `used ${s.guide_entry_used}` }) : null),
+    s.instruction_given ? el('p', {}, el('b', { text: 'Said: ' }), s.instruction_given) : null,
+    el('p', {}, el('b', { text: 'Saw: ' }), s.observed_action),
+    s.correction_given ? el('p', { class: s.correction_worked ? 'fix' : '' }, el('b', { text: s.correction_worked ? 'Fixed with: ' : 'Tried: ' }), s.correction_given) : null));
+  $('detail').replaceChildren(head, ...(items.length ? items : [el('p', { class: 'muted', text: 'No steps logged (the caller may not have agreed to logging).' })]));
+}
+
+async function loadGuide() {
+  const g = await api('/api/guide');
+  $('entries').replaceChildren(...g.entries.map((e) => el('tr', {},
+    el('td', { class: 'id', text: e.id }),
+    el('td', {}, el('b', { text: e.title }), el('div', { class: 'muted', text: e.correct_method })),
+    el('td', {}, el('span', { class: `badge ${e.status === 'established' ? 'ok' : 'warn'}`, text: e.status })),
+    el('td', { class: 'muted', text: e.evidence ? `${e.evidence.sessions ?? '?'} calls` : e.source }))));
+  $('history').replaceChildren(...(g.changelog.length
+    ? [...g.changelog].reverse().map((c) => el('li', {}, el('span', { class: `badge ${c.rollback ? 'bad' : 'ok'}`, style: 'margin-right:8px', text: c.rollback ? 'rollback' : 'publish' }), c.text))
+    : [el('li', { class: 'muted', text: `Playbook v${g.meta.version}, no updates yet.` })]));
+}
+
+async function loadCuration() {
+  const { latest } = await api('/api/curation');
+  if (!latest) return;
+  $('cur-title').textContent = `Latest curation: batch #${latest.batch} (${words(latest.status)})`;
+  $('curation').replaceChildren(
+    el('p', { class: 'muted', text: `v${latest.base_version} → proposed v${latest.proposed_version} · ${latest.new_sessions ?? '?'} new calls · ${latest.mode}` }),
+    el('ul', { class: 'plain' },
+      ...latest.accepted.map((a) => el('li', {}, el('span', { class: 'badge ok', style: 'margin-right:8px', text: 'learned' }), a.title || words(a.op), a.rationale ? el('div', { class: 'muted', text: a.rationale }) : null)),
+      ...latest.rejected.map((r) => el('li', {}, el('span', { class: 'badge bad', style: 'margin-right:8px', text: 'blocked' }), r.title || words(r.op),
+        el('div', { class: 'muted', text: (r.failures || []).map((f) => `${f.gate}: ${f.reason}`).join(' · ') })))));
+}
+
+function showCard(card) {
+  $('card').replaceChildren(el('h3', { text: card.title }), el('ol', {}, ...card.steps.map((s) => el('li', { text: s }))));
+}
+
+function feed(text) {
+  $('feed').prepend(el('li', {}, el('span', { class: 'muted', text: `${new Date().toLocaleTimeString()} ` }), text));
+  while ($('feed').children.length > 30) $('feed').lastChild.remove();
+}
+
+function showError(err) { feed(`⚠ ${err.message}`); }
+
+const refreshAll = () => Promise.all([loadOverview(), loadCalls(), loadGuide(), loadCuration()]).catch(showError);
+let refreshTimer = null;
+const refreshSoon = () => { clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { refreshAll(); if (selected) selectCall(selected).catch(showError); }, 400); };
+
+// Live events from browser calls on this server. FaceTime calls run in the bridge process, so we also poll.
+function connectStream() {
+  const es = new EventSource(withToken('/api/stream'));
+  es.onopen = () => { $('live').classList.add('on'); $('live').lastElementChild.textContent = 'Live'; };
+  es.onerror = () => { $('live').classList.remove('on'); $('live').lastElementChild.textContent = 'Reconnecting…'; };
+  es.onmessage = (m) => {
+    const e = JSON.parse(m.data);
+    if (e.type === 'call_start') feed('Call started');
+    else if (e.type === 'call_end') { feed('Call ended'); refreshSoon(); }
+    else if (e.type === 'card') { showCard(e.card); feed(`Card: ${e.card.title}`); }
+    else if (e.type === 'tool_call') { feed(`Tool: ${words(e.name)}`); if (/^log_/.test(e.name)) refreshSoon(); }
+    else if (e.type === 'start_failed' || e.type === 'error') feed(`⚠ ${e.error || e.type}`);
+  };
+}
+
+refreshAll();
+setInterval(refreshAll, 5000);
+// ?call=<session id> opens that call (handy for demos and links).
+const linked = new URLSearchParams(location.search).get('call');
+if (linked) selectCall(linked).catch(showError);
+connectStream();
+</script>
+</body>
+</html>

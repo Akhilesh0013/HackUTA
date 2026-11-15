@@ -1,17 +1,23 @@
-// Browser call server: serves public/ and bridges one WebSocket per call to a Gemini Live session.
-//   npm start            then open http://localhost:3000/call.html
+// Browser call server: serves public/, the dashboard API, and bridges one WebSocket per call to a
+// Gemini Live session.
+//   npm start            then open http://localhost:3000/call.html  (dashboard: /dashboard.html)
+// Dashboard API (read-only; set DASHBOARD_TOKEN to require ?token= or a Bearer header):
+//   GET /api/overview  /api/calls  /api/calls/:id  /api/guide  /api/curation  /api/stream (SSE)
 // Wire protocol on /ws
 //   browser → server  binary: 0x01 + JPEG frame, 0x02 + 16 kHz PCM16 mono audio
 //                     text JSON: {type:'text', text} | {type:'audio_end'}
 //   server → browser  binary: 24 kHz PCM16 mono agent audio
 //                     text JSON: {type:'ready'|'transcript'|'card'|'event'|'error', ...}
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { startLiveSession } from './agent/live-session.mjs';
+import { paths as getPaths } from './config.mjs';
+import { getCall, guideInfo, latestCuration, listCalls, overview } from './dashboard/api.mjs';
 import { hashCaller } from './tools/handlers.mjs';
 
 const PUBLIC_DIR = fileURLToPath(new URL('../public/', import.meta.url));
@@ -34,14 +40,72 @@ function serveStatic(req, res, publicDir) {
   fs.createReadStream(file).pipe(res);
 }
 
+function sendJsonRes(res, status, body) {
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.end(JSON.stringify(body));
+}
+
+function tokenOk(req, url, token) {
+  if (!token) return true;
+  const given = url.searchParams.get('token') || (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const a = Buffer.from(given);
+  const b = Buffer.from(token);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+function handleApi(req, res, url, { paths, bus, dashboardToken }) {
+  if (!tokenOk(req, url, dashboardToken)) return sendJsonRes(res, 401, { error: 'token required' });
+  if (req.method !== 'GET') return sendJsonRes(res, 405, { error: 'GET only' });
+  const route = url.pathname.replace(/\/+$/, '');
+  try {
+    if (route === '/api/overview') return sendJsonRes(res, 200, overview(paths));
+    if (route === '/api/calls') return sendJsonRes(res, 200, listCalls(paths, Math.min(Number(url.searchParams.get('limit')) || 50, 500)));
+    if (route.startsWith('/api/calls/')) {
+      const call = getCall(paths, decodeURIComponent(route.slice('/api/calls/'.length)));
+      return call ? sendJsonRes(res, 200, call) : sendJsonRes(res, 404, { error: 'no such call' });
+    }
+    if (route === '/api/guide') return sendJsonRes(res, 200, guideInfo(paths));
+    if (route === '/api/curation') return sendJsonRes(res, 200, latestCuration(paths));
+    if (route === '/api/stream') {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', Connection: 'keep-alive' });
+      res.write('retry: 3000\n\n');
+      const send = (e) => res.write(`data: ${JSON.stringify(e)}\n\n`);
+      const ping = setInterval(() => res.write(': ping\n\n'), 25_000);
+      bus.on('event', send);
+      req.on('close', () => { clearInterval(ping); bus.off('event', send); });
+      return undefined;
+    }
+  } catch (err) {
+    return sendJsonRes(res, 500, { error: err.message });
+  }
+  return sendJsonRes(res, 404, { error: 'unknown endpoint' });
+}
+
 /**
  * @param {object} [o]
  * @param {typeof startLiveSession} [o.startSession]  injectable for tests
  * @param {string} [o.publicDir]
  * @param {(e: object) => void} [o.log]
+ * @param {ReturnType<typeof getPaths>} [o.paths]  where call logs and the guide live
+ * @param {string} [o.dashboardToken]
  */
-export function createCallServer({ startSession = startLiveSession, publicDir = PUBLIC_DIR, log = () => {} } = {}) {
-  const server = http.createServer((req, res) => serveStatic(req, res, publicDir));
+export function createCallServer({
+  startSession = startLiveSession, publicDir = PUBLIC_DIR, log = () => {},
+  paths = getPaths(), dashboardToken = process.env.DASHBOARD_TOKEN,
+} = {}) {
+  const bus = new EventEmitter();
+  bus.setMaxListeners(100);
+  // Every call event goes to the log and to dashboard viewers. Only safe fields: tool args can hold caller details.
+  const note = ({ type, sessionId, name, error, card }) => {
+    log({ type, sessionId, name, error });
+    bus.emit('event', { t: new Date().toISOString(), type, sessionId, ...(name ? { name } : {}), ...(error ? { error } : {}), ...(card ? { card } : {}) });
+  };
+  const server = http.createServer((req, res) => {
+    const url = new URL(req.url, 'http://x');
+    if (url.pathname.startsWith('/api/')) handleApi(req, res, url, { paths, bus, dashboardToken });
+    else serveStatic(req, res, publicDir);
+  });
+  server.bus = bus;
   const wss = new WebSocketServer({ server, path: '/ws', maxPayload: MAX_FRAME + 1 });
 
   wss.on('connection', async (ws, req) => {
@@ -55,7 +119,7 @@ export function createCallServer({ startSession = startLiveSession, publicDir = 
       ended = true;
       live?.close();
       if (ws.readyState === ws.OPEN) ws.close();
-      log({ type: 'call_end', sessionId });
+      note({ type: 'call_end', sessionId });
     };
     ws.on('close', end);
 
@@ -80,25 +144,26 @@ export function createCallServer({ startSession = startLiveSession, publicDir = 
       live = await startSession({
         sessionId,
         callerId,
+        paths,
         onAudio: (pcm) => { if (ws.readyState === ws.OPEN) ws.send(pcm, { binary: true }); },
         onTranscript: (t) => sendJson({ type: 'transcript', ...t }),
-        onCard: (card) => sendJson({ type: 'card', card }),
+        onCard: (card) => { sendJson({ type: 'card', card }); note({ type: 'card', sessionId, card }); },
         onEvent: (e) => {
           // Tool args/results can hold caller details; the page only needs the event type and tool name.
           // Close reasons and errors come from the Gemini connection, not the caller, so they are safe to show.
           sendJson({ type: 'event', event: e.type, ...(e.name ? { name: e.name } : {}), ...(e.reason ? { reason: e.reason } : {}), ...(e.error ? { error: e.error } : {}) });
           if (e.type === 'close') end();
-          log({ sessionId, ...e });
+          note({ sessionId, type: e.type, name: e.name, error: e.error });
         },
       });
     } catch (err) {
       sendJson({ type: 'error', error: `Could not start the agent: ${err.message}` });
-      log({ type: 'start_failed', sessionId, error: err.message });
+      note({ type: 'start_failed', sessionId, error: err.message });
       end();
       return;
     }
     if (ended) { live.close(); return; }
-    log({ type: 'call_start', sessionId });
+    note({ type: 'call_start', sessionId });
     sendJson({ type: 'ready', sessionId });
   });
 
@@ -111,5 +176,5 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   createCallServer({
     // Only type/name/error: tool args can hold caller details.
     log: ({ type, sessionId, name, error }) => console.log(JSON.stringify({ type, sessionId, name, error })),
-  }).listen(port, () => console.log(`Genesis call server: http://localhost:${port}/call.html`));
+  }).listen(port, () => console.log(`Genesis call server: http://localhost:${port}/call.html · dashboard: http://localhost:${port}/dashboard.html`));
 }
