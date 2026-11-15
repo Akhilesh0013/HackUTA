@@ -19,6 +19,8 @@ You FaceTime Genesis and point your camera at a problem: a monitor with no signa
 | `src/curation/` | filter → aggregate → propose → gates → apply → publish / monitor / rollback |
 | `src/server.mjs`, `public/call.html` | Browser call: camera + hold-to-talk mic over WebSocket |
 | `src/dashboard/`, `public/dashboard.html` | Dashboard: calls with each step, mistake and fix; results per playbook version; learned vs blocked updates; rollbacks |
+| `src/mirror.mjs` | Optional MongoDB Atlas copy of call logs (`MONGODB_URI`) |
+| `deploy/`, `docs/DEPLOY.md` | Vultr + GoDaddy + Caddy HTTPS deploy: `DOMAIN=... bash deploy/setup.sh` |
 | `src/bridge/` | FaceTime bridge: LiveKit room ↔ Gemini Live, step cards rendered as a video track |
 | `src/sim.mjs` | Synthetic sessions, including attacks and noise, for demos and tests |
 | `data/manuals/` | Manual library for `lookup_manual` (the included one is a demo fixture) |
@@ -26,7 +28,7 @@ You FaceTime Genesis and point your camera at a problem: a monitor with no signa
 ## Commands
 ```bash
 npm start                                  # browser call at http://localhost:3000, dashboard at /dashboard.html
-npm test                                   # 30 tests: PII, handlers, every gate, end-to-end, call server, bridge, dashboard
+npm test                                   # 33 tests: PII, handlers, every gate, end-to-end, call server, bridge, dashboard, MongoDB mirror
 npm run live-smoke                         # scripted call against Gemini 3.8 Live (frame + tools + WAV)
 npm run ws-smoke                           # same, through the call server WebSocket
 npm run bridge -- --watch                  # FaceTime bridge: join each Chert/LiveKit call room as the agent

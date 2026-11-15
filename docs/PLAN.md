@@ -57,8 +57,10 @@ Already done: guide, tool handlers, curation pipeline (G1–G11), publish/rollba
 
 - [ ] **4.1 Deploy.** Set `DASHBOARD_TOKEN`: the dashboard shows call logs to anyone who can reach it. Run `src/server.mjs` on Vultr behind HTTPS (the camera needs HTTPS), on a GoDaddy domain.
   Done when: `/call` works from a phone browser at the domain.
+  Status: built. `deploy/setup.sh` (Node 22, Caddy HTTPS, systemd `genesis-web` + `genesis-bridge`, ufw, random `DASHBOARD_TOKEN` in a 600 `.env`), steps in `docs/DEPLOY.md`. The server binds `HOST=127.0.0.1` and won't start in production without `DASHBOARD_TOKEN`. Tested on a clean Ubuntu 24.04 amd64 container (systemd stubbed): install, Caddy config valid, token gating, `sharp` and LiveKit native modules load, 33/33 tests on Linux. 🔑 Real check: Vultr VM + GoDaddy DNS, then a phone call at the domain.
 - [ ] **4.2 MongoDB.** Mirror observations and call records to MongoDB Atlas. Keep the JSONL files as the source for curation.
   Done when: a call appears in Atlas.
+  Status: built. `src/mirror.mjs`, on when `MONGODB_URI` is set: `observations` (keyed by obs_id), `sessions` (one per call, latest summary), `consent`. Fire-and-forget: a down database never breaks a call, warns once a minute, reconnects. Verified against a real MongoDB 8 container: 20 simulated calls, Mongo counts match JSONL exactly. 🔑 Real check: Atlas URI.
 
 ## Phase 5: Demo and submission
 
