@@ -51,6 +51,7 @@ Put `GEMINI_API_KEY` in `.env` (scripts load it). The live agent uses `gemini-3.
 ## Docs
 - [docs/PLAN.md](docs/PLAN.md): build plan and status
 - [docs/DEMO.md](docs/DEMO.md): demo runbook
+- [docs/HOW-TO-GUIDE.md](docs/HOW-TO-GUIDE.md): AI models used, and how to test at each level
 - [docs/DEPLOY.md](docs/DEPLOY.md): deploy to Vultr + GoDaddy + Atlas
 - [docs/DEVPOST.md](docs/DEVPOST.md): submission text
 
