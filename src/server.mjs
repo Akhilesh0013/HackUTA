@@ -112,6 +112,13 @@ export function createCallServer({
     const sessionId = randomUUID();
     const callerId = hashCaller(`${req.socket.remoteAddress}|${req.headers['user-agent'] || ''}`);
     const sendJson = (o) => { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(o)); };
+    // Say so plainly instead of relaying Google's "Permission denied on the service".
+    if (startSession === startLiveSession && !process.env.GEMINI_API_KEY) {
+      sendJson({ type: 'error', error: 'Genesis has no Gemini API key yet. Add GEMINI_API_KEY to .env and restart the server.' });
+      log({ type: 'start_failed', sessionId, error: 'GEMINI_API_KEY missing' });
+      ws.close();
+      return;
+    }
     let live = null;
     let ended = false;
     const end = () => {

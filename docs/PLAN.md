@@ -18,7 +18,7 @@ Already done: guide, tool handlers, curation pipeline (G1–G11), publish/rollba
   Status: built. `test/server.test.mjs` passes with a fake session (forwarding, input validation, no tool args leak to the browser, path traversal refused). 🔑 Real check: `npm run ws-smoke`.
 - [ ] **1.2 Call page.** `public/call.html`: camera + mic with `getUserMedia`, a JPEG frame every ~1 s, 16 kHz PCM mic audio, 24 kHz playback, step cards drawn beside the video.
   Done when: on a laptop, pointing the camera at a monitor cable gets a spoken step and a card.
-  Status: built (`npm start`, open http://localhost:3000). Without a key the page shows "Agent disconnected: API key not valid." 🔑 Real check: a live call in Chrome.
+  Status: built (`npm start`, open http://localhost:3000). Without a key the page says "Genesis has no Gemini API key yet." 🔑 Real check: a live call in Chrome.
 - [ ] **1.3 Consent and echo.** Consent prompt at call start. Push-to-talk button so the mic doesn't hear the agent.
   Done when: no steps are logged before consent, and the agent doesn't answer itself.
   Status: built. The start screen explains logging; consent itself stays verbal (the agent asks, `record_consent` is refused until the caller answers). Hold-to-talk button or Space, which sends `audio_end` on release. 🔑 Real check: a live call.

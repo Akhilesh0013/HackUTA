@@ -18,7 +18,7 @@ Run every command from the project folder. Each level needs the one before it to
 1. Run `npm test`. Expect `pass 33` and `fail 0`.
 2. Run `npm run demo:seed`, then `npm run demo`.
 3. Open http://localhost:3000/dashboard.html. Click a call: each step shows, with the mistake in red and the fix in green. Further down, "Latest curation" lists learned and blocked updates, and "Playbook history" shows the rollback.
-4. Open http://localhost:3000/call.html and click **Start call**, then allow the camera. Without a key, the call ends with "Agent disconnected: API key not valid". That is expected.
+4. Open http://localhost:3000/call.html and click **Start call**, then allow the camera. Without a key, the call ends with "Genesis has no Gemini API key yet. Add GEMINI_API_KEY to .env and restart the server." That is expected.
 
 ### 2. With the Gemini key
 
