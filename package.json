@@ -20,7 +20,7 @@
     "bridge": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/cli/bridge.mjs",
     "demo:seed": "node scripts/demo-seed.mjs",
     "demo": "GENESIS_ROOT=demo-data node --env-file-if-exists=.env src/server.mjs",
-    "facetime": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/agent/chert-worker.mjs start"
+    "facetime": "caffeinate -is node --env-file-if-exists=.env --env-file-if-exists=.env.local src/agent/chert-worker.mjs start"
   },
   "optionalDependencies": {
     "@google/genai": "^1.0.0"
