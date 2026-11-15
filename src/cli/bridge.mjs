@@ -37,15 +37,15 @@ const active = new Set();
 const finishedAt = new Map(); // don't rejoin a room we just left (e.g. silence timeout) for 5 min
 async function handle(roomName) {
   active.add(roomName);
-  try { await joinRoom(roomName); } catch (err) { log({ type: 'error', room: roomName, error: err.message }); }
+  try { await joinRoom(roomName); return true; } catch (err) { log({ type: 'error', room: roomName, error: err.message }); return false; }
   finally { active.delete(roomName); finishedAt.set(roomName, Date.now()); }
 }
 const coolingDown = (name) => Date.now() - (finishedAt.get(name) ?? 0) < 5 * 60_000;
 
 if (arg('room')) {
-  await handle(arg('room'));
+  const ok = await handle(arg('room'));
   await rtc.dispose();
-  process.exit(0);
+  process.exit(ok ? 0 : 1);
 } else {
   const prefix = arg('prefix') || '';
   const svc = new RoomServiceClient(LIVEKIT_URL.replace(/^ws/, 'http'), LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
