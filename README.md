@@ -17,15 +17,18 @@ You FaceTime Genesis and point your camera at a problem: a monitor with no signa
 | `src/agent/live-session.mjs` | Gemini 3.8 Live session for one call: GUIDE.md as system prompt, tools, frames/audio in, speech/cards out, server-side consent guard |
 | `src/tools/` | Tool schemas (Gemini/OpenAI adapters) + server-side handlers (consent, validation, PII redaction) |
 | `src/curation/` | filter → aggregate → propose → gates → apply → publish / monitor / rollback |
+| `src/server.mjs`, `public/call.html` | Browser call: camera + hold-to-talk mic over WebSocket |
+| `src/bridge/` | FaceTime bridge: LiveKit room ↔ Gemini Live, step cards rendered as a video track |
 | `src/sim.mjs` | Synthetic sessions, including attacks and noise, for demos and tests |
 | `data/manuals/` | Manual library for `lookup_manual` (the included one is a demo fixture) |
 
 ## Commands
 ```bash
 npm start                                  # browser call at http://localhost:3000 (camera + mic)
-npm test                                   # 21 tests: PII, handlers, every gate, end-to-end, call server
+npm test                                   # 27 tests: PII, handlers, every gate, end-to-end, call server, bridge
 npm run live-smoke                         # scripted call against Gemini 3.8 Live (frame + tools + WAV)
 npm run ws-smoke                           # same, through the call server WebSocket
+npm run bridge -- --watch                  # FaceTime bridge: join each Chert/LiveKit call room as the agent
 npm run simulate -- --sessions 60          # fake calls through the real handlers
 npm run curate                             # needs 25 new sessions (or --force)
 npm run curate -- --allow-no-classifier    # offline run; reviewer must check safety manually
@@ -38,7 +41,7 @@ Put `GEMINI_API_KEY` in `.env` (scripts load it). The live agent uses `gemini-3.
 ## Status
 - ✅ Guide, tools, curation pipeline, publish/rollback, simulator, tests
 - ✅ Gemini 3.8 Live session tested end to end with a camera frame: diagnosis, manual lookup, consent, mistake + fix logging
-- ⏳ Chert/LiveKit bridge: feed `facetime-remote-video` frames (~1 fps JPEG) and audio (16 kHz PCM) into `startLiveSession`, publish its 24 kHz audio + step cards as the agent's tracks. Needs macOS/Linux plus Chert and LiveKit keys.
+- 🔧 Browser call (`npm start`) and Chert/LiveKit FaceTime bridge (`npm run bridge`): built and tested with fakes; live runs need Gemini and LiveKit keys
 - ⏳ Demo dashboard
 
 ## Earlier plan

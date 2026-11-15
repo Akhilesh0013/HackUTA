@@ -30,14 +30,19 @@ Already done: guide, tool handlers, curation pipeline (G1–G11), publish/rollba
 
 - [ ] **2.1 Chert access.** Get Chert and LiveKit keys and the docs at the Chert table. Add them to `.env`. Write down how a FaceTime call reaches LiveKit.
   Done when: you know the room or participant the call joins, and the track names (`facetime-remote-video`, audio).
+  Status: Chert's FaceTime API is private preview with no public docs. Built against the teammate's notes (call lands in a LiveKit room, camera track `facetime-remote-video`). 🔑 At the Chert table, confirm: room naming (for `--prefix`), track names (`CALLER_VIDEO_TRACK`), and whether they send a call webhook (would replace polling).
 - [ ] **2.2 Join the room as the agent.** `src/bridge/livekit.mjs`: join with the LiveKit server SDK, subscribe to the caller's video and audio.
   Done when: frames and audio from a real FaceTime call are logged on the server.
+  Status: built. `src/bridge/livekit.mjs` + `npm run bridge -- --room <name>` or `-- --watch [--prefix p]`. Logs `caller_video` / `caller_audio`, and `video_track_name_mismatch` if Chert's track name differs. 🔑 Real check: a FaceTime call.
 - [ ] **2.3 Caller to Gemini.** Downscale video to ~1 fps JPEG and resample audio to 16 kHz PCM, then feed `startLiveSession`.
   Done when: the agent's transcript describes what the FaceTime camera shows.
+  Status: built. RGBA → 512 px JPEG with `sharp`, 1 fps; audio via `AudioStream` at 16 kHz mono. Tested with fakes. 🔑 Real check: a FaceTime call.
 - [ ] **2.4 Gemini to caller.** Publish the agent's 24 kHz audio as an audio track, and step cards as a video track.
   Done when: on the iPhone, you hear the agent and see cards during the FaceTime call.
+  Status: built. `genesis-voice` (24 kHz, 10 ms frames) and `genesis-cards` (1280×720, SVG rendered by `sharp`, idle screen until the first card). Barge-in clears queued speech. 🔑 Real check: a FaceTime call. Ask Chert whether a second video track reaches the iPhone; if not, cards need another route.
 - [ ] **2.5 Harden.** Reconnect on drop, end the session when the caller hangs up, time out silent calls.
   Done when: 5 calls in a row start and end cleanly.
+  Status: built. Ends on caller hang-up, room disconnect, 60 s of silence, or a failed agent start. Reconnects the Gemini session once and resends the last frame. `--watch` won't rejoin a room for 5 min after leaving. Tested with fakes (27/27). 🔑 Real check: 5 FaceTime calls.
 
 ## Phase 3: Dashboard
 

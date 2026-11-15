@@ -16,12 +16,16 @@
     "monitor": "node --env-file-if-exists=.env src/cli/monitor.mjs",
     "live-smoke": "node --env-file-if-exists=.env scripts/live-smoke.mjs",
     "test": "node --test \"test/**/*.test.mjs\"",
-    "ws-smoke": "node --env-file-if-exists=.env scripts/ws-smoke.mjs"
+    "ws-smoke": "node --env-file-if-exists=.env scripts/ws-smoke.mjs",
+    "bridge": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/cli/bridge.mjs"
   },
   "optionalDependencies": {
     "@google/genai": "^1.0.0"
   },
   "dependencies": {
+    "@livekit/rtc-node": "^1.2.2",
+    "livekit-server-sdk": "^2.19.3",
+    "sharp": "^0.35.5",
     "ws": "^8.23.0"
   }
 }
