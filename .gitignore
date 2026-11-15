@@ -6,3 +6,6 @@ data/raw/
 data/curation/
 data/episodes/
 guide/GUIDE.proposed.md
+
+# example env file is safe to commit
+!.env.example
