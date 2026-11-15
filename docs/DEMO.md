@@ -46,6 +46,7 @@ Go down this list and don't debug in front of judges.
 - **"What about privacy?"** Genesis asks before keeping notes, and logs are refused until the caller says yes. Emails, phone numbers, serial numbers, MAC addresses, public IPs and secrets are removed before anything is stored. Caller IDs are hashed.
 - **"How is this different from ChatGPT voice?"** You FaceTime it with no app, it sees in real time, and it learns from real calls under gates, with rollback.
 - **"What if Chert's API changes?"** The agent doesn't depend on the transport: the browser call runs the same session.
+- **"Why does the rollback say −55 points when the table shows 87% vs 47%?"** The monitor decides fast: it compares the first 25 calls on the new version against the previous version's consented, unflagged calls. The table counts every call, including flagged ones.
 - **"Business model?"** Support teams pay per resolved call; device makers pay for their manuals and fixes to be in the playbook.
 
 ## Reference
