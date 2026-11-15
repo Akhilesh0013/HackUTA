@@ -172,9 +172,15 @@ export function createCallServer({
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const port = Number(process.env.PORT) || 3000;
+  const host = process.env.HOST || undefined; // deploy sets 127.0.0.1 so only Caddy can reach it
+  if (process.env.NODE_ENV === 'production' && !process.env.DASHBOARD_TOKEN) {
+    console.error('Refusing to start: set DASHBOARD_TOKEN in production, or anyone with the URL can read call logs.');
+    process.exit(1);
+  }
   if (!process.env.GEMINI_API_KEY) console.warn('GEMINI_API_KEY is not set: calls will fail to start until it is added to .env');
+  if (process.env.MONGODB_URI) console.log('MongoDB mirror: on');
   createCallServer({
     // Only type/name/error: tool args can hold caller details.
     log: ({ type, sessionId, name, error }) => console.log(JSON.stringify({ type, sessionId, name, error })),
-  }).listen(port, () => console.log(`Genesis call server: http://localhost:${port}/call.html · dashboard: http://localhost:${port}/dashboard.html`));
+  }).listen(port, host, () => console.log(`Genesis call server: http://localhost:${port}/call.html · dashboard: http://localhost:${port}/dashboard.html`));
 }

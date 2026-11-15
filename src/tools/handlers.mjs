@@ -6,6 +6,7 @@ import {
   OUTCOMES, OUTCOME_EVIDENCE, RESULTS, TASK_CATEGORIES, isValidErrorType, paths as getPaths,
 } from '../config.mjs';
 import { appendJsonl } from '../jsonl.mjs';
+import { defaultMirror } from '../mirror.mjs';
 import { redactObject } from '../pii.mjs';
 import { searchManuals } from '../manuals.mjs';
 
@@ -25,9 +26,11 @@ export function createToolHandlers({
   paths = getPaths(),
   onCard = () => {},
   now = () => new Date().toISOString(),
+  mirror = defaultMirror, // optional MongoDB copy; JSONL stays the source of truth
 }) {
   if (!sessionId || !callerId || guideVersion == null) throw new Error('sessionId, callerId, guideVersion required');
   let consent = null; // null = not asked yet
+  const write = (kind, file, record) => { appendJsonl(file, record); mirror.record(kind, record); };
   let sessionLogged = false;
 
   const ctx = () => ({ session_id: sessionId, caller_id: callerId, guide_version: guideVersion, ts: now() });
@@ -38,7 +41,7 @@ export function createToolHandlers({
     record_consent({ granted }) {
       if (typeof granted !== 'boolean') return { ok: false, error: 'granted must be boolean' };
       consent = granted;
-      appendJsonl(paths.sessions.replace('sessions.jsonl', 'consent.jsonl'), { ...ctx(), consent: granted });
+      write('consent', paths.sessions.replace('sessions.jsonl', 'consent.jsonl'), { ...ctx(), consent: granted });
       return { ok: true, consent: granted };
     },
 
@@ -78,7 +81,7 @@ export function createToolHandlers({
         confidence,
       };
       const { value, found } = redactObject(record);
-      appendJsonl(paths.observations, {
+      write('observations', paths.observations, {
         ...ctx(),
         obs_id: crypto.randomUUID(),
         consent: true,
@@ -116,7 +119,7 @@ export function createToolHandlers({
         caller_rating: Number.isInteger(args.caller_rating) && args.caller_rating >= 1 && args.caller_rating <= 5 ? args.caller_rating : null,
       };
       const { value, found } = redactObject(record);
-      appendJsonl(paths.sessions, {
+      write('sessions', paths.sessions, {
         ...ctx(),
         consent: true,
         flagged: false,

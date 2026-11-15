@@ -1,0 +1,23 @@
+[Unit]
+Description=Genesis call server and dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=genesis
+WorkingDirectory=/opt/genesis
+EnvironmentFile=/opt/genesis/.env
+EnvironmentFile=-/opt/genesis/.env.local
+# Only Caddy (same machine) can reach the app; it refuses to start without DASHBOARD_TOKEN.
+Environment=NODE_ENV=production HOST=127.0.0.1 PORT=3000
+ExecStart=/usr/bin/node src/server.mjs
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/genesis/data /opt/genesis/guide
+
+[Install]
+WantedBy=multi-user.target

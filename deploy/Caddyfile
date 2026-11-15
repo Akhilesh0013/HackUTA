@@ -1,0 +1,6 @@
+# HTTPS for Genesis. setup.sh replaces GENESIS_DOMAIN and installs this as /etc/caddy/Caddyfile.
+# Caddy gets and renews the certificate, and proxies WebSocket (/ws) and SSE (/api/stream) as-is.
+# The browser only allows camera and microphone on HTTPS, so the call page needs this.
+GENESIS_DOMAIN {
+	reverse_proxy 127.0.0.1:3000
+}

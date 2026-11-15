@@ -1,0 +1,23 @@
+[Unit]
+Description=Genesis FaceTime bridge (joins Chert/LiveKit call rooms)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=genesis
+WorkingDirectory=/opt/genesis
+EnvironmentFile=/opt/genesis/.env
+EnvironmentFile=-/opt/genesis/.env.local
+Environment=NODE_ENV=production
+# Add --prefix <room prefix> once Chert confirms how call rooms are named.
+ExecStart=/usr/bin/node src/cli/bridge.mjs --watch
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/genesis/data /opt/genesis/guide
+
+[Install]
+WantedBy=multi-user.target
