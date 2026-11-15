@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "version": 1,
+    "last_curated": "2026-11-14",
+    "sessions_included": 0,
+    "last_batch": 0
+  },
+  "entries": [
+    {
+      "id": "D1-001", "category": "D1", "status": "established", "source": "seed",
+      "title": "Monitor \"No signal\": wrong input source",
+      "spot_it": "The monitor shows a \"No signal\" or \"Input\" banner, and the cable is visibly in a port like DP while the monitor input is HDMI.",
+      "correct_method": "Press the monitor's input or source button and choose the port the cable is actually in. Check the port label on the back.",
+      "group_key": null, "evidence": null, "added_batch": 0, "updated_batch": 0
+    },
+    {
+      "id": "D1-002", "category": "D1", "status": "established", "source": "seed",
+      "title": "HDMI/DP not fully seated",
+      "spot_it": "A metal part of the plug is visible outside the socket, or the plug is angled.",
+      "correct_method": "Push straight in until it stops. A DisplayPort plug should click. Check both ends.",
+      "group_key": null, "evidence": null, "added_batch": 0, "updated_batch": 0
+    },
+    {
+      "id": "D1-003", "category": "D1", "status": "established", "source": "seed",
+      "title": "Desktop video cable in the motherboard instead of the graphics card",
+      "spot_it": "The video cable is in a port near the USB/audio cluster while a separate graphics card has its own ports lower down.",
+      "correct_method": "Move the cable to the ports on the graphics card (the horizontal strip lower on the back).",
+      "group_key": null, "evidence": null, "added_batch": 0, "updated_batch": 0
+    },
+    {
+      "id": "D1-004", "category": "D1", "status": "established", "source": "seed",
+      "title": "USB-C cable is charge-only",
+      "spot_it": "The device charges but there's no display or data. The cable is thin or came with a phone charger.",
+      "correct_method": "Use a cable rated for data or video (USB 3.x/Thunderbolt logo, or the one that came with the monitor or dock).",
+      "group_key": null, "evidence": null, "added_batch": 0, "updated_batch": 0
+    },
+    {
+      "id": "D2-001", "category": "D2", "status": "established", "source": "seed",
+      "title": "Modem cable in a router LAN port instead of WAN",
+      "spot_it": "The cable from the modem or wall goes into one of a group of same-colored ports. The WAN/Internet port is usually a different color or set apart.",
+      "correct_method": "Move it to the port labelled WAN or Internet, then restart the router.",
+      "group_key": null, "evidence": null, "added_batch": 0, "updated_batch": 0
+    },
+    {
+      "id": "D2-002", "category": "D2", "status": "established", "source": "seed",
+      "title": "No link lights on the Ethernet port",
+      "spot_it": "The LEDs next to the port are off even though a cable is plugged in.",
+      "correct_method": "Reseat both ends until they click, try another port or cable, and check that the other device is powered on.",
+      "group_key": null, "evidence": null, "added_batch": 0, "updated_batch": 0
+    },
+    {
+      "id": "D3-001", "category": "D3", "status": "established", "source": "seed",
+      "title": "RAM not fully latched",
+      "spot_it": "One end of the stick sits higher, or a clip isn't closed.",
+      "correct_method": "Line up the notch, then press firmly on both ends until both clips snap shut. Power is off.",
+      "group_key": null, "evidence": null, "added_batch": 0, "updated_batch": 0
+    },
+    {
+      "id": "D3-002", "category": "D3", "status": "established", "source": "seed",
+      "title": "CPU 8-pin (EPS) power missing",
+      "spot_it": "An empty 4+4 or 8-pin socket in the top-left corner of the motherboard.",
+      "correct_method": "Connect the PSU cable labelled CPU (not PCIe) until it latches.",
+      "group_key": null, "evidence": null, "added_batch": 0, "updated_batch": 0
+    },
+    {
+      "id": "D3-003", "category": "D3", "status": "trial", "source": "seed",
+      "title": "Front-panel power switch on the wrong pins",
+      "spot_it": "Tiny two-pin connectors on the bottom-right header don't match the printed labels.",
+      "correct_method": "Check the motherboard manual's front-panel diagram (lookup_manual). PWR_SW goes on the PWR pins, and polarity doesn't matter for switches.",
+      "group_key": null, "evidence": null, "added_batch": 0, "updated_batch": 0
+    }
+  ]
+}

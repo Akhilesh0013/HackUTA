@@ -1,0 +1,15 @@
+{
+  "_note": "DEMO FIXTURE, not a real product manual. Replace with real manuals (with permission) before relying on page numbers.",
+  "brand": "DemoCo",
+  "model": "DM-24",
+  "device_type": "monitor",
+  "aliases": ["DM24", "DemoCo 24"],
+  "title": "DemoCo DM-24 Monitor User Guide (demo fixture)",
+  "source_url": null,
+  "sections": [
+    { "page": 4, "heading": "Ports", "text": "Rear panel, left to right: power input, HDMI 1, HDMI 2, DisplayPort, USB-B upstream, headphone out." },
+    { "page": 7, "heading": "Selecting the input source", "text": "Press the Input button on the bottom edge, then use the joystick to choose HDMI 1, HDMI 2 or DisplayPort. Auto-select can be enabled in Menu > Input > Auto." },
+    { "page": 9, "heading": "No signal troubleshooting", "text": "If 'No signal' appears: confirm the computer is on, reseat the cable at both ends, and select the matching input source." },
+    { "page": 12, "heading": "Wall mount", "text": "Uses VESA 100x100 mounting with M4 screws, 10 mm. Remove the stand first by pressing the release button." }
+  ]
+}
