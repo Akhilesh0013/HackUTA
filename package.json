@@ -4,17 +4,24 @@
   "private": true,
   "description": "Live FaceTime tech-guide agent: tool handlers, observation logging, and safe guide curation.",
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.mjs",
     "render-guide": "node --env-file-if-exists=.env src/cli/render-guide.mjs",
     "simulate": "node --env-file-if-exists=.env scripts/simulate.mjs",
     "curate": "node --env-file-if-exists=.env src/cli/curate.mjs",
     "publish-guide": "node --env-file-if-exists=.env src/cli/publish.mjs",
     "monitor": "node --env-file-if-exists=.env src/cli/monitor.mjs",
     "live-smoke": "node --env-file-if-exists=.env scripts/live-smoke.mjs",
-    "test": "node --test \"test/**/*.test.mjs\""
+    "test": "node --test \"test/**/*.test.mjs\"",
+    "ws-smoke": "node --env-file-if-exists=.env scripts/ws-smoke.mjs"
   },
   "optionalDependencies": {
     "@google/genai": "^1.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.23.0"
   }
 }

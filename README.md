@@ -22,8 +22,10 @@ You FaceTime Genesis and point your camera at a problem: a monitor with no signa
 
 ## Commands
 ```bash
-npm test                                   # 18 tests: PII, handlers, every gate, end-to-end
+npm start                                  # browser call at http://localhost:3000 (camera + mic)
+npm test                                   # 21 tests: PII, handlers, every gate, end-to-end, call server
 npm run live-smoke                         # scripted call against Gemini 3.8 Live (frame + tools + WAV)
+npm run ws-smoke                           # same, through the call server WebSocket
 npm run simulate -- --sessions 60          # fake calls through the real handlers
 npm run curate                             # needs 25 new sessions (or --force)
 npm run curate -- --allow-no-classifier    # offline run; reviewer must check safety manually

@@ -1,6 +1,6 @@
 # Genesis: build plan
 
-Work one task at a time, top to bottom. A task is done only when its **Done when** check passes. Tick the box, commit, then start the next one.
+Work one task at a time, top to bottom. **Keys come last:** build every phase first, then add `.env` keys and run the checks marked 🔑. A task is done only when its **Done when** check passes. Tick the box, commit, then start the next one.
 
 Already done: guide, tool handlers, curation pipeline (G1–G11), publish/rollback, simulator, 18 tests, offline demo video.
 
@@ -15,12 +15,16 @@ Already done: guide, tool handlers, curation pipeline (G1–G11), publish/rollba
 
 - [ ] **1.1 Call server.** `src/server.mjs`: Node HTTP + WebSocket. One WebSocket per call opens a `startLiveSession`. Forwards caller frames and audio in, and agent audio, transcripts and cards out.
   Done when: a scripted WebSocket client sends the fixture frame and gets agent audio back.
+  Status: built. `test/server.test.mjs` passes with a fake session (forwarding, input validation, no tool args leak to the browser, path traversal refused). 🔑 Real check: `npm run ws-smoke`.
 - [ ] **1.2 Call page.** `public/call.html`: camera + mic with `getUserMedia`, a JPEG frame every ~1 s, 16 kHz PCM mic audio, 24 kHz playback, step cards drawn beside the video.
   Done when: on a laptop, pointing the camera at a monitor cable gets a spoken step and a card.
+  Status: built (`npm start`, open http://localhost:3000). Without a key the page shows "Agent disconnected: API key not valid." 🔑 Real check: a live call in Chrome.
 - [ ] **1.3 Consent and echo.** Consent prompt at call start. Push-to-talk button so the mic doesn't hear the agent.
   Done when: no steps are logged before consent, and the agent doesn't answer itself.
+  Status: built. The start screen explains logging; consent itself stays verbal (the agent asks, `record_consent` is refused until the caller answers). Hold-to-talk button or Space, which sends `audio_end` on release. 🔑 Real check: a live call.
 - [ ] **1.4 Logged calls feed curation.** Confirm browser calls land in `data/raw/observations.jsonl` with PII redacted.
   Done when: 3 real browser calls show up in `npm run curate -- --force`.
+  Status: no code needed; the same tool handlers write the logs. 🔑 Real check: 3 live calls.
 
 ## Phase 2: FaceTime bridge (Chert + LiveKit)
 

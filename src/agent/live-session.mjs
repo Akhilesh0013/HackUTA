@@ -119,6 +119,10 @@ export async function startLiveSession({
     sendAudio(pcm16k) {
       if (!closed) session.sendRealtimeInput({ audio: { data: Buffer.from(pcm16k).toString('base64'), mimeType: LIVE_INPUT_AUDIO } });
     },
+    /** Caller released push-to-talk: flush buffered audio so the model answers without waiting for silence. */
+    endAudio() {
+      if (!closed) session.sendRealtimeInput({ audioStreamEnd: true });
+    },
     /** Typed input (tests, or iMessage side-channel). */
     sendText(text) {
       if (!closed) { callerInput(); session.sendRealtimeInput({ text }); }
